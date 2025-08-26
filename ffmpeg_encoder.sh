@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Advanced FFmpeg Two-Pass Encoding Script mit Fortschritts-Visualisierung
-# Version: 2.2 - Content-Adaptive Encoding mit Progress Bars
-# Automatische Bitrate-Optimierung, Crop-Detection und Echtzeit-Progress
+# Advanced FFmpeg Two-Pass Encoding Script
+# Version: 2.2 - Content-Adaptive Encoding
+# Automatic Bitrate Optimization and Crop Detection
 
 set -euo pipefail
 
-# Farben für Logging
+# Colors for logging
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -15,11 +15,11 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Temporäre Datei-Einstellungen
+# Temporary file settings
 TEMP_DIR="/tmp"
 STATS_PREFIX="ffmpeg_stats_$$"
 
-# Basis-Profil-Definitionen
+# Base profile definitions
 declare -A BASE_PROFILES
 
 # 1080p Profile
@@ -38,7 +38,7 @@ BASE_PROFILES["4k_3d_animation_hdr"]="preset=slow:crf=22:pix_fmt=yuv420p10le:pro
 BASE_PROFILES["4k_film"]="preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=18000:content_type=film"
 BASE_PROFILES["4k_film_hdr"]="preset=slow:crf=23:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=22000:content_type=film"
 
-# Progress Bar Funktionen
+# Progress bar functions
 show_progress() {
     local current=$1
     local total=$2
@@ -79,7 +79,7 @@ show_spinner() {
     printf "\r${CYAN}[PROGRESS]${NC} %s ✓\n" "$description"
 }
 
-# Fortschritts-wrapper für Befehle mit geschätzter Dauer
+# Progress wrapper for commands with estimated duration
 run_with_progress() {
     local description=$1
     local estimated_duration=$2
@@ -87,7 +87,7 @@ run_with_progress() {
     local cmd=("$@")
     
     if [[ $estimated_duration -gt 0 ]]; then
-        # Zeitbasierter Progress Bar
+        # Time-based progress bar
         "${cmd[@]}" &
         local pid=$!
         local elapsed=0
@@ -106,7 +106,7 @@ run_with_progress() {
         
         return $exit_code
     else
-        # Spinner für unbekannte Dauer
+        # Spinner for unknown duration
         "${cmd[@]}" &
         local pid=$!
         show_spinner "$pid" "$description"
@@ -115,7 +115,7 @@ run_with_progress() {
     fi
 }
 
-# FFmpeg mit Echtzeit-Progress
+# FFmpeg with real-time progress
 run_ffmpeg_with_progress() {
     local description=$1
     local input_duration=$2
@@ -124,27 +124,27 @@ run_ffmpeg_with_progress() {
     
     log INFO "$description"
     
-    # Temporäre Datei für FFmpeg Progress
+    # Temporary file for FFmpeg progress
     local progress_file="${TEMP_DIR}/ffmpeg_progress_$$.txt"
     
-    # FFmpeg Befehl mit Progress-Output erweitern
+    # Extend FFmpeg command with progress output
     local ffmpeg_cmd=("${cmd[@]}")
     ffmpeg_cmd+=(-progress "$progress_file")
     
-    # FFmpeg im Hintergrund starten
+    # Start FFmpeg in background
     "${ffmpeg_cmd[@]}" &
     local pid=$!
     
-    # Progress überwachen
+    # Monitor progress
     local current_time=0
     while kill -0 "$pid" 2>/dev/null; do
         if [[ -f "$progress_file" ]]; then
-            # Aktuellen Fortschritt aus Progress-Datei lesen
+            # Read current progress from progress file
             local out_time=$(tail -n 20 "$progress_file" 2>/dev/null | \
                 grep "out_time_ms=" | tail -1 | cut -d= -f2 || echo "0")
             
             if [[ "$out_time" =~ ^[0-9]+$ ]] && [[ $out_time -gt 0 ]]; then
-                current_time=$((out_time / 1000000)) # Mikrosekunden zu Sekunden
+                current_time=$((out_time / 1000000)) # Microseconds to seconds
                 
                 if [[ $input_duration -gt 0 && $current_time -le $input_duration ]]; then
                     show_progress "$current_time" "$input_duration" "$description"
@@ -160,7 +160,7 @@ run_ffmpeg_with_progress() {
     # Cleanup
     rm -f "$progress_file" 2>/dev/null || true
     
-    # 100% anzeigen bei Erfolg
+    # Show 100% on success
     if [[ $exit_code -eq 0 && $input_duration -gt 0 ]]; then
         show_progress "$input_duration" "$input_duration" "$description"
     fi
@@ -169,7 +169,7 @@ run_ffmpeg_with_progress() {
     return $exit_code
 }
 
-# Video-Dauer ermitteln
+# Determine video duration
 get_video_duration() {
     local input=$1
     local duration=$(ffprobe -v error -analyzeduration 100M -probesize 50M -show_entries format=duration \
@@ -178,7 +178,7 @@ get_video_duration() {
     echo "$duration"
 }
 
-# Logging-Funktion
+# Logging function
 log() {
     local level=$1; shift
     local msg=$*
@@ -193,38 +193,38 @@ log() {
     esac
 }
 
-# Validierung der Eingabedatei
+# Input file validation
 validate_input() {
     local f=$1
-    [[ -f $f && -r $f ]] || { log ERROR "Ungültige Eingabedatei: $f"; exit 1; }
+    [[ -f $f && -r $f ]] || { log ERROR "Invalid input file: $f"; exit 1; }
     ffprobe -v error -analyzeduration 100M -probesize 50M -select_streams v:0 -show_entries stream=index "$f" >/dev/null \
-        || { log ERROR "Kein Video-Stream: $f"; exit 1; }
-    log INFO "Eingabe validiert: $f"
+        || { log ERROR "No video stream: $f"; exit 1; }
+    log INFO "Input validated: $f"
 }
 
-# Automatische Crop-Erkennung mit Progress
+# Automatic crop detection with progress
 detect_crop_values() {
     local input=$1
     local detection_duration=${2:-300}
     local min_threshold=${3:-20}
     
-    log CROP "Starte automatische Crop-Erkennung..." >&2
+    log CROP "Starting automatic crop detection..." >&2
     
-    # HDR-Erkennung für adaptive Crop-Limits  
+    # HDR detection for adaptive crop limits  
     local is_hdr=$(extract_hdr_metadata "$input")
     local crop_limit=16
     if [[ "$is_hdr" == "true" ]]; then
-        crop_limit=64  # Höherer Threshold für HDR-Content da schwarze Balken nicht pure schwarz sind
-        log CROP "HDR-Content erkannt - verwende angepassten Crop-Limit: $crop_limit" >&2
+        crop_limit=64  # Higher threshold for HDR content as black bars are not pure black
+        log CROP "HDR content detected - using adjusted crop limit: $crop_limit" >&2
     else
-        log CROP "SDR-Content - verwende Standard Crop-Limit: $crop_limit" >&2
+        log CROP "SDR content - using standard crop limit: $crop_limit" >&2
     fi
     
-    # Video-Dauer ermitteln
+    # Determine video duration
     local video_duration=$(get_video_duration "$input")
     [[ $video_duration -lt $detection_duration ]] && detection_duration=$video_duration
     
-    # Sample-Punkte
+    # Sample points
     local start_time=60
     local mid_time=$((video_duration / 2))
     local end_time=$((video_duration - 60))
@@ -232,22 +232,22 @@ detect_crop_values() {
     
     local temp_crop_log="${TEMP_DIR}/crop_analysis_$$.log"
     
-    # Sample 1 mit Progress - adaptive Erkennung für schwarze Balken
+    # Sample 1 with progress - adaptive detection for black bars
     local cmd1="ffmpeg -loglevel info -ss $start_time -i '$input' -t 30 -vsync vfr -vf 'fps=1/4,cropdetect=limit=$crop_limit:round=2:reset=1' -f null - 2>&1 | grep -o 'crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*' >> '$temp_crop_log' || true"
-    run_with_progress "Crop-Analyse (Start)" 30 \
+    run_with_progress "Crop Analysis (Start)" 30 \
         bash -c "$cmd1" >&2
     
-    # Sample 2 mit Progress
+    # Sample 2 with progress
     local cmd2="ffmpeg -loglevel info -ss $mid_time -i '$input' -t 30 -vsync vfr -vf 'fps=1/4,cropdetect=limit=$crop_limit:round=2:reset=1' -f null - 2>&1 | grep -o 'crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*' >> '$temp_crop_log' || true"
-    run_with_progress "Crop-Analyse (Mitte)" 30 \
+    run_with_progress "Crop Analysis (Middle)" 30 \
         bash -c "$cmd2" >&2
     
-    # Sample 3 mit Progress
+    # Sample 3 with progress
     local cmd3="ffmpeg -loglevel info -ss $end_time -i '$input' -t 30 -vsync vfr -vf 'fps=1/4,cropdetect=limit=$crop_limit:round=2:reset=1' -f null - 2>&1 | grep -o 'crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*' >> '$temp_crop_log' || true"
-    run_with_progress "Crop-Analyse (Ende)" 30 \
+    run_with_progress "Crop Analysis (End)" 30 \
         bash -c "$cmd3" >&2
     
-    # Häufigsten Crop-Wert ermitteln
+    # Determine most common crop value
     local most_common_crop=""
     if [[ -f "$temp_crop_log" && -s "$temp_crop_log" ]]; then
         most_common_crop=$(sort "$temp_crop_log" | uniq -c | sort -nr | head -1 | awk '{print $2}' 2>/dev/null || echo "")
@@ -255,7 +255,7 @@ detect_crop_values() {
     
     rm -f "$temp_crop_log" 2>/dev/null || true
     
-    # Validierung
+    # Validation
     if [[ -n "$most_common_crop" ]]; then
         local crop_w=$(echo "$most_common_crop" | cut -d: -f1 | cut -d= -f2)
         local crop_h=$(echo "$most_common_crop" | cut -d: -f2)
@@ -269,24 +269,24 @@ detect_crop_values() {
         local h_diff=$((orig_h - crop_h))
         local total_diff=$((w_diff + h_diff))
         
-        # Überprüfe sowohl absolute Differenz als auch prozentuale Differenz
+        # Check both absolute difference and percentage difference
         local percentage_diff=$(echo "scale=2; ($total_diff * 100) / ($orig_w + $orig_h)" | bc -l 2>/dev/null || echo "0")
         local significant_crop=$(echo "$percentage_diff > 1.0" | bc -l 2>/dev/null || echo "0")
         
         if [[ $total_diff -ge $min_threshold ]] || [[ $significant_crop -eq 1 ]]; then
-            log CROP "Crop erkannt: ${orig_w}x${orig_h} → ${crop_w}x${crop_h} (${total_diff} Pixel, ${percentage_diff}%)" >&2
+            log CROP "Crop detected: ${orig_w}x${orig_h} → ${crop_w}x${crop_h} (${total_diff} pixels, ${percentage_diff}%)" >&2
             echo "$most_common_crop"
         else
-            log CROP "Kein signifikanter Crop erforderlich (${total_diff} Pixel, ${percentage_diff}%)" >&2
+            log CROP "No significant crop required (${total_diff} pixels, ${percentage_diff}%)" >&2
             echo ""
         fi
     else
-        log CROP "Keine schwarzen Balken erkannt" >&2
+        log CROP "No black bars detected" >&2
         echo ""
     fi
 }
 
-# Spatial Information berechnen
+# Calculate Spatial Information
 calculate_spatial_information() {
     local input=$1
     local duration=$(get_video_duration "$input")
@@ -322,7 +322,7 @@ calculate_spatial_information() {
     echo "${si:-50}"
 }
 
-# Temporal Information berechnen
+# Calculate Temporal Information
 calculate_temporal_information() {
     local input=$1
     
@@ -427,7 +427,7 @@ analyze_frame_distribution() {
     echo "${frame_complexity:-4}"
 }
 
-# HDR-Metadaten extrahieren
+# Extract HDR metadata
 extract_hdr_metadata() {
     local f=$1
     
@@ -443,12 +443,12 @@ extract_hdr_metadata() {
     echo "$is_hdr"
 }
 
-# Gesamte Komplexitätsanalyse mit Progress
+# Complete complexity analysis with progress
 perform_complexity_analysis() {
     local input=$1
-    log ANALYSIS "Starte umfassende Komplexitätsanalyse für: $(basename "$input")"
+    log ANALYSIS "Starting comprehensive complexity analysis for: $(basename "$input")"
     
-    # Basis-Metriken sammeln
+    # Collect base metrics
     local si=$(calculate_spatial_information "$input")
     local ti=$(calculate_temporal_information "$input")
     local scene_changes=$(analyze_scene_changes "$input")
@@ -464,7 +464,7 @@ perform_complexity_analysis() {
     log ANALYSIS "SI: $si, TI: $ti, Scenes/min: $scene_changes, Frame-Komplexität: $frame_complexity"
     log ANALYSIS "HDR Content: $is_hdr"
     
-    # Komplexitäts-Score berechnen
+    # Calculate complexity score
     local complexity_score
     complexity_score=$(echo "scale=2; ($si * 0.3) + ($ti * 0.4) + ($scene_changes * 2) + ($frame_complexity * 0.3)" | bc -l 2>/dev/null || echo "50")
     
@@ -473,18 +473,18 @@ perform_complexity_analysis() {
         complexity_score="50"
     fi
     
-    # Score begrenzen
+    # Limit score
     if (( $(echo "$complexity_score > 100" | bc -l 2>/dev/null || echo 0) )); then
         complexity_score="100"
     elif (( $(echo "$complexity_score < 10" | bc -l 2>/dev/null || echo 0) )); then
         complexity_score="10"
     fi
     
-    log ANALYSIS "Gesamtkomplexitäts-Score: $complexity_score"
+    log ANALYSIS "Total complexity score: $complexity_score"
     echo "$complexity_score"
 }
 
-# Bitrate basierend auf Komplexität anpassen
+# Adjust bitrate based on complexity
 calculate_adaptive_bitrate() {
     local base_bitrate=$1
     local complexity_score=$2
@@ -514,7 +514,7 @@ calculate_adaptive_bitrate() {
     echo "${adaptive_bitrate}k"
 }
 
-# CRF basierend auf Komplexität anpassen
+# Adjust CRF based on complexity
 calculate_adaptive_crf() {
     local base_crf=$1
     local complexity_score=$2
@@ -539,7 +539,7 @@ calculate_adaptive_crf() {
     echo "$adaptive_crf"
 }
 
-# Filter-Chain mit automatischem Crop bauen
+# Build filter chain with automatic crop
 build_filter_chain() {
     local manual_crop=$1
     local scale=$2
@@ -549,10 +549,10 @@ build_filter_chain() {
     local final_crop=""
     if [[ -n "$manual_crop" ]]; then
         final_crop="crop=$manual_crop"
-        log DEBUG "Verwende manuellen Crop: $manual_crop" >&2
+        log DEBUG "Using manual crop: $manual_crop" >&2
     elif [[ -n "$auto_crop" ]]; then
         final_crop="$auto_crop"
-        log DEBUG "Verwende automatischen Crop: $auto_crop" >&2
+        log DEBUG "Using automatic crop: $auto_crop" >&2
     fi
     
     if [[ -n "$final_crop" ]]; then
@@ -590,49 +590,49 @@ build_stream_mapping() {
     echo "$map"
 }
 
-# Profil parsen und durch Komplexitätsanalyse anpassen
+# Parse profile and adapt through complexity analysis
 parse_and_adapt_profile() {
     local profile_name=$1
     local input_file=$2
     local str=${BASE_PROFILES[$profile_name]:-}
-    [[ -n $str ]] || { log ERROR "Unbekanntes Profil: $profile_name"; exit 1; }
+    [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; exit 1; }
     
-    # Basis-Werte extrahieren
+    # Extract base values
     local base_bitrate=$(echo "$str" | grep -o 'base_bitrate=[^:]*' | cut -d= -f2)
     local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | cut -d= -f2)
     local content_type=$(echo "$str" | grep -o 'content_type=[^:]*' | cut -d= -f2)
     
-    # Komplexitätsanalyse durchführen
-    log ANALYSIS "Starte Content-Analyse für adaptive Parameter-Optimierung..." >&2
+    # Perform complexity analysis
+    log ANALYSIS "Starting content analysis for adaptive parameter optimization..." >&2
     local complexity_score=$(perform_complexity_analysis "$input_file")
     
-    # Adaptive Parameter berechnen
+    # Calculate adaptive parameters
     local adaptive_bitrate=$(calculate_adaptive_bitrate "$base_bitrate" "$complexity_score" "$content_type")
     local adaptive_crf=$(calculate_adaptive_crf "$base_crf" "$complexity_score")
     
-    log ANALYSIS "Adaptive Parameter - Bitrate: $base_bitrate → $adaptive_bitrate, CRF: $base_crf → $adaptive_crf (Komplexität: $complexity_score)" >&2
+    log ANALYSIS "Adaptive parameters - Bitrate: $base_bitrate → $adaptive_bitrate, CRF: $base_crf → $adaptive_crf (Complexity: $complexity_score)" >&2
     
-    # Profil mit adaptiven Werten aktualisieren
+    # Update profile with adaptive values
     local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
     
     echo "$adapted_profile"
 }
 
-# Two-Pass-Encoding mit adaptiven Parametern und Progress
+# Two-pass encoding with adaptive parameters and progress
 run_encoding() {
     local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6
 
     log INFO "Profil: $prof"
     
-    # Video-Dauer für Progress
+    # Video duration for progress
     local input_duration=$(get_video_duration "$in")
     
-    # Automatische Crop-Erkennung
+    # Automatic crop detection
     local auto_crop=""
     if [[ -z "$manual_crop" ]]; then
-        log INFO "Starte automatische Crop-Erkennung..."
+        log INFO "Starting automatic crop detection..."
         auto_crop=$(detect_crop_values "$in")
-        log INFO "Crop-Erkennung abgeschlossen."
+        log INFO "Crop detection completed."
     fi
     
     local ps=$(parse_and_adapt_profile "$prof" "$in")
@@ -646,9 +646,9 @@ run_encoding() {
     local streams=$(build_stream_mapping "$in")
     local stats="$TEMP_DIR/${STATS_PREFIX}_$(basename "$in" .${in##*.}).log"
 
-    log INFO "Adaptive Parameter - Bitrate: $bitrate, CRF: $crf"
+    log INFO "Adaptive parameters - Bitrate: $bitrate, CRF: $crf"
 
-    # First Pass mit Progress
+    # First pass with progress
     local cmd1=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd1+=(-metadata title="$title")
     [[ -n $fc ]] && cmd1+=(-filter_complex "$fc" -map "[v]") || cmd1+=(-map 0:v:0)
@@ -657,10 +657,10 @@ run_encoding() {
     cmd1+=(-b:v "$bitrate" -preset:v slow -an -sn -dn -f mp4 -loglevel warning /dev/null)
     
     run_ffmpeg_with_progress "First Pass (Analyse)" "$input_duration" "${cmd1[@]}" || { 
-        log ERROR "First Pass fehlgeschlagen"; exit 1; 
+        log ERROR "First pass failed"; exit 1; 
     }
 
-    # Second Pass mit Progress
+    # Second pass with progress
     local cmd2=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd2+=(-metadata title="$title")
     [[ -n $fc ]] && cmd2+=(-filter_complex "$fc" -map "[v]") || cmd2+=(-map 0:v:0)
@@ -670,30 +670,30 @@ run_encoding() {
     cmd2+=($streams -default_mode infer_no_subs -loglevel warning "$out")
     
     run_ffmpeg_with_progress "Second Pass (Final Encoding)" "$input_duration" "${cmd2[@]}" || { 
-        log ERROR "Second Pass fehlgeschlagen"; exit 1; 
+        log ERROR "Second pass failed"; exit 1; 
     }
 
-    # Aufräumen
+    # Cleanup
     rm -f "${stats}"* 2>/dev/null || true
     
-    # Finale Statistiken
+    # Final statistics
     local input_size=$(du -h "$in" | cut -f1)
     local output_size=$(du -h "$out" | cut -f1)
     local compression_ratio=$(echo "scale=1; $(du -k "$in" | cut -f1) / $(du -k "$out" | cut -f1)" | bc -l 2>/dev/null || echo "N/A")
-    log INFO "Komprimierung: $input_size → $output_size (Ratio: ${compression_ratio}:1)"
-    log INFO "Encoding erfolgreich abgeschlossen!"
+    log INFO "Compression: $input_size → $output_size (Ratio: ${compression_ratio}:1)"
+    log INFO "Encoding completed successfully!"
 }
 
-# Hauptfunktion
+# Main function
 main() {
     local input="" output="" profile="" title="" crop="" scale=""
 
-    # Abhängigkeiten prüfen
+    # Check dependencies
     for tool in ffmpeg ffprobe bc; do
-        command -v $tool >/dev/null || { log ERROR "$tool fehlt (installiere: apt install $tool)"; exit 1; }
+        command -v $tool >/dev/null || { log ERROR "$tool missing (install: apt install $tool)"; exit 1; }
     done
 
-    # Argumente parsen
+    # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             -i|--input)    input="$2"; shift 2 ;;
@@ -703,26 +703,26 @@ main() {
             -c|--crop)     crop="$2"; shift 2 ;;
             -s|--scale)    scale="$2"; shift 2 ;;
             -h|--help)     
-                echo "Advanced FFmpeg Two-Pass Encoder mit Auto-Crop für x265 Enkodierung"
+                echo "Advanced FFmpeg Two-Pass Encoder with Auto-Crop for x265 encoding"
                 echo "Usage: $0 -i INPUT -o OUTPUT -p PROFILE [OPTIONS]"
                 echo ""
                 echo "Profile: ${!BASE_PROFILES[*]}"
                 echo ""
                 exit 0 ;;
-            *) log ERROR "Unbekannte Option: $1"; exit 1 ;;
+            *) log ERROR "Unknown option: $1"; exit 1 ;;
         esac
     done
 
     [[ -n $input && -n $output && -n $profile ]] || { 
-        log ERROR "Fehlende Argumente: -i INPUT -o OUTPUT -p PROFILE"; exit 1; 
+        log ERROR "Missing arguments: -i INPUT -o OUTPUT -p PROFILE"; exit 1; 
     }
     validate_input "$input"
 
-    log INFO "Starte Content-Adaptive Encoding mit Auto-Crop und Progress-Visualisierung..."
+    log INFO "Starting content-adaptive encoding with auto-crop and progress visualization..."
     run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale"
 }
 
-# Skript ausführen
+# Execute script
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# batch_encode.sh – Wrapper für ffmpeg_encoder.sh
-# Verarbeitet alle Videodateien in einem Input-Verzeichnis
-# und speichert die encodeten Dateien im Output-Verzeichnis
-# mit Input-Dateiname + UUID, um Überschreiben zu vermeiden.
+# batch_encode.sh – Wrapper for ffmpeg_encoder.sh
+# Processes all video files in an input directory
+# and saves the encoded files in the output directory
+# with input filename + UUID to prevent overwriting.
 
 set -euo pipefail
 
-# Default-Werte
+# Default values
 INPUT_DIR=""
 OUTPUT_DIR=""
 PROFILE=""
@@ -18,17 +18,17 @@ usage() {
   cat <<EOF
 Usage: $0 -i INPUT_DIR -o OUTPUT_DIR -p PROFILE
 
-  -i, --input-dir   Verzeichnis mit Quelldateien
-  -o, --output-dir  Zielverzeichnis für encodierte Dateien
-  -p, --profile     Encoding-Profil (z.B. 4k_3d_animation_hdr)
+  -i, --input-dir   Directory with source files
+  -o, --output-dir  Target directory for encoded files
+  -p, --profile     Encoding profile (e.g. 4k_3d_animation_hdr)
 
-Beispiel:
+Example:
   $0 -i ~/Videos/Raw -o ~/Videos/Encoded -p 1080p_anime
 EOF
   exit 1
 }
 
-# Argumente parsen
+# Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     -i|--input-dir)
@@ -40,27 +40,27 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       usage ;;
     *)
-      echo "Unbekannte Option: $1"; usage ;;
+      echo "Unknown option: $1"; usage ;;
   esac
 done
 
-# Validierung
+# Validation
 if [[ -z "$INPUT_DIR" || -z "$OUTPUT_DIR" || -z "$PROFILE" ]]; then
-  echo "Fehlende Argumente." >&2
+  echo "Missing arguments." >&2
   usage
 fi
 
 if [[ ! -d "$INPUT_DIR" ]]; then
-  echo "Input-Verzeichnis existiert nicht: $INPUT_DIR" >&2
+  echo "Input directory does not exist: $INPUT_DIR" >&2
   exit 1
 fi
 
 mkdir -p "$OUTPUT_DIR"
 
-# Dateitypen, die verarbeitet werden
+# File types to be processed
 EXTENSIONS=("mkv" "mp4" "mov" "m4v")
 
-# Durchlaufe alle Dateien
+# Process all files
 find "$INPUT_DIR" -type f \( \
   $(printf -- "-iname '*.%s' -o " "${EXTENSIONS[@]}" | sed 's/ -o $//') \
 \) | while read -r INPUT_FILE; do
@@ -70,15 +70,15 @@ find "$INPUT_DIR" -type f \( \
   UUID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
   OUTPUT_FILE="${OUTPUT_DIR}/${NAME}_${UUID}.${EXT}"
 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Verarbeite: $BASENAME"
-  echo "→ Profil: $PROFILE"
-  echo "→ Ziel:   $(basename "$OUTPUT_FILE")"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Processing: $BASENAME"
+  echo "→ Profile: $PROFILE"
+  echo "→ Target:  $(basename "$OUTPUT_FILE")"
 
-  # Aufruf des ffmpeg-Encoders
+  # Call the ffmpeg encoder
   "$ENCODER_SCRIPT" -i "$INPUT_FILE" -o "$OUTPUT_FILE" -p "$PROFILE"
 
-  echo "→ Fertig: $(basename "$OUTPUT_FILE")"
+  echo "→ Done:    $(basename "$OUTPUT_FILE")"
   echo "----------------------------------------"
 done
 
-echo "Batch-Encoding abgeschlossen."
+echo "Batch encoding completed."
