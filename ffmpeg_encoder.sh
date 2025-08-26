@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Advanced FFmpeg Two-Pass Encoding Script
-# Version: 2.2 - Content-Adaptive Encoding
-# Automatic Bitrate Optimization and Crop Detection
+# Advanced FFmpeg Multi-Mode Encoding Script
+# Version: 2.3 - Content-Adaptive Encoding with Mode Support
+# CRF/ABR/CBR modes, Automatic Bitrate Optimization and Crop Detection
 
 set -euo pipefail
 
@@ -39,8 +39,14 @@ show_progress() {
     local description=$3
     local bar_length=50
     
-    local progress=$((current * bar_length / total))
-    local percentage=$((current * 100 / total))
+    # Avoid division by zero
+    if [[ $total -eq 0 ]]; then
+        local progress=0
+        local percentage=0
+    else
+        local progress=$((current * bar_length / total))
+        local percentage=$((current * 100 / total))
+    fi
     
     local bar=""
     for ((i=0; i<bar_length; i++)); do
@@ -508,21 +514,32 @@ calculate_adaptive_bitrate() {
     echo "${adaptive_bitrate}k"
 }
 
-# Adjust CRF based on complexity
+# Adjust CRF based on complexity and content type
 calculate_adaptive_crf() {
     local base_crf=$1
     local complexity_score=$2
+    local content_type=$3
     
     # Validate inputs
     [[ "$base_crf" =~ ^[0-9.]+$ ]] || base_crf="22"
     [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
     
-    local crf_adjustment
-    crf_adjustment=$(echo "scale=1; ($complexity_score - 50) * (-0.05)" | bc -l 2>/dev/null || echo "0")
-    [[ "$crf_adjustment" =~ ^-?[0-9.]+$ ]] || crf_adjustment="0"
+    # Content-type specific CRF modifiers (professional encoding practices)
+    local type_crf_modifier=0.0
+    case $content_type in
+        "anime")         type_crf_modifier=0.5 ;;   # Slightly higher CRF (lower quality) - anime compresses well
+        "3d_animation")  type_crf_modifier=-0.8 ;;  # Lower CRF (higher quality) - CGI needs detail preservation  
+        "film")          type_crf_modifier=0.0 ;;   # Baseline - balanced for live-action
+    esac
     
+    # Complexity-based adjustment
+    local complexity_adjustment
+    complexity_adjustment=$(echo "scale=1; ($complexity_score - 50) * (-0.05)" | bc -l 2>/dev/null || echo "0")
+    [[ "$complexity_adjustment" =~ ^-?[0-9.]+$ ]] || complexity_adjustment="0"
+    
+    # Apply both content-type and complexity adjustments
     local adaptive_crf
-    adaptive_crf=$(echo "scale=1; $base_crf + $crf_adjustment" | bc -l 2>/dev/null || echo "$base_crf")
+    adaptive_crf=$(echo "scale=1; $base_crf + $type_crf_modifier + $complexity_adjustment" | bc -l 2>/dev/null || echo "$base_crf")
     [[ "$adaptive_crf" =~ ^[0-9.]+$ ]] || adaptive_crf="$base_crf"
     
     if (( $(echo "$adaptive_crf < 15" | bc -l 2>/dev/null || echo 0) )); then
@@ -567,14 +584,18 @@ build_stream_mapping() {
     local f=$1 map=""
     
     local audio_streams=$(ffprobe -v error -analyzeduration 100M -probesize 50M -select_streams a -show_entries stream=index "$f" 2>/dev/null | grep -c "index=" || echo "0")
-    if [[ $audio_streams -gt 0 ]]; then
+    # Remove any newlines/whitespace
+    audio_streams=$(echo "$audio_streams" | tr -d '\n\r ')
+    if [[ "$audio_streams" =~ ^[0-9]+$ ]] && [[ $audio_streams -gt 0 ]]; then
         for i in $(seq 0 $((audio_streams-1))); do 
             map+=" -map 0:a:$i -c:a:$i copy"
         done
     fi
     
     local sub_streams=$(ffprobe -v error -analyzeduration 100M -probesize 50M -select_streams s -show_entries stream=index "$f" 2>/dev/null | grep -c "index=" || echo "0")
-    if [[ $sub_streams -gt 0 ]]; then
+    # Remove any newlines/whitespace
+    sub_streams=$(echo "$sub_streams" | tr -d '\n\r ')
+    if [[ "$sub_streams" =~ ^[0-9]+$ ]] && [[ $sub_streams -gt 0 ]]; then
         for i in $(seq 0 $((sub_streams-1))); do 
             map+=" -map 0:s:$i -c:s:$i copy"
         done
@@ -615,7 +636,7 @@ parse_and_adapt_profile() {
     
     # Calculate adaptive parameters
     local adaptive_bitrate=$(calculate_adaptive_bitrate "$selected_bitrate" "$complexity_score" "$content_type")
-    local adaptive_crf=$(calculate_adaptive_crf "$selected_crf" "$complexity_score")
+    local adaptive_crf=$(calculate_adaptive_crf "$selected_crf" "$complexity_score" "$content_type")
     
     log ANALYSIS "Adaptive parameters - Bitrate: $selected_bitrate → $adaptive_bitrate, CRF: $selected_crf → $adaptive_crf (Complexity: $complexity_score)"
     
@@ -631,9 +652,9 @@ parse_and_adapt_profile() {
     echo "$adapted_profile"
 }
 
-# Two-pass encoding with adaptive parameters and progress
+# Enhanced encoding with mode support (ABR/CRF/CBR)
 run_encoding() {
-    local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6
+    local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6 mode=$7
 
     log INFO "Profile: $prof"
     
@@ -658,7 +679,76 @@ run_encoding() {
     local streams=$(build_stream_mapping "$in")
     local stats="$TEMP_DIR/${STATS_PREFIX}_$(basename "$in" .${in##*.}).log"
 
-    log INFO "Adaptive parameters - Bitrate: $bitrate, CRF: $crf"
+    log INFO "Encoding mode: $mode - Adaptive parameters - Bitrate: $bitrate, CRF: $crf"
+    
+    # Execute encoding based on mode
+    case $mode in
+        "crf")
+            run_crf_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration"
+            ;;
+        "cbr")
+            run_cbr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats"
+            ;;
+        "abr"|*)
+            run_abr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats"
+            ;;
+    esac
+    
+    # Final statistics
+    local input_size=$(du -h "$in" | cut -f1)
+    local output_size=$(du -h "$out" | cut -f1)
+    local compression_ratio=$(echo "scale=1; $(du -k "$in" | cut -f1) / $(du -k "$out" | cut -f1)" | bc -l 2>/dev/null || echo "N/A")
+    log INFO "Compression: $input_size → $output_size (Ratio: ${compression_ratio}:1)"
+    log INFO "Encoding completed successfully!"
+}
+
+# Single-pass CRF encoding (Pure VBR)
+run_crf_encoding() {
+    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7
+    
+    local bitrate=$(echo "$ps" | grep -o 'bitrate=[^:]*' | cut -d= -f2)
+    local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
+    local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
+    local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
+    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | cut -d= -f2)
+    local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
+    
+    log INFO "Starting single-pass CRF encoding (Pure VBR)..."
+    
+    # Single-pass CRF command (remove bitrate completely)
+    local cmd=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    [[ -n $title ]] && cmd+=(-metadata title="$title")
+    [[ -n $fc ]] && cmd+=(-filter_complex "$fc" -map "[v]") || cmd+=(-map 0:v:0)
+    cmd+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
+    cmd+=(-crf "$crf" -preset:v "$preset")
+    # Clean x265 params by removing any bitrate references
+    local clean_x265p=$(echo "$x265p" | sed 's|bitrate=[^:]*:||g;s|:bitrate=[^:]*||g;s|^bitrate=[^:]*$||g')
+    [[ -n "$clean_x265p" ]] && cmd+=(-x265-params "$clean_x265p")
+    cmd+=($streams -default_mode infer_no_subs -loglevel warning "$out")
+    
+    run_ffmpeg_with_progress "CRF Encoding (Single Pass)" "$input_duration" "${cmd[@]}" || { 
+        log ERROR "CRF encoding failed"; exit 1; 
+    }
+}
+
+# Two-pass CBR encoding
+run_cbr_encoding() {
+    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 bitrate=$8 stats=$9
+    
+    local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
+    local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
+    local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
+    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | cut -d= -f2)
+    local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
+    
+    # Calculate CBR buffer constraints
+    local bitrate_value=$(echo "$bitrate" | sed 's/k$//')
+    local maxrate="${bitrate}"
+    local minrate="${bitrate}"
+    local bufsize="$((bitrate_value * 3 / 2))k"  # 1.5x bitrate for buffer
+    
+    log INFO "Starting two-pass CBR encoding (Constant Bitrate)..."
+    log INFO "CBR Parameters - Rate: $bitrate, Buffer: $bufsize"
 
     # First pass with progress
     local cmd1=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
@@ -666,10 +756,52 @@ run_encoding() {
     [[ -n $fc ]] && cmd1+=(-filter_complex "$fc" -map "[v]") || cmd1+=(-map 0:v:0)
     cmd1+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
     cmd1+=(-x265-params "$x265p:pass=1:no-slow-firstpass=1:stats=$stats")
+    cmd1+=(-b:v "$bitrate" -minrate "$minrate" -maxrate "$maxrate" -bufsize "$bufsize")
+    cmd1+=(-preset:v slow -an -sn -dn -f mp4 -loglevel warning /dev/null)
+    
+    run_ffmpeg_with_progress "CBR First Pass (Analysis)" "$input_duration" "${cmd1[@]}" || { 
+        log ERROR "CBR first pass failed"; exit 1; 
+    }
+
+    # Second pass with progress
+    local cmd2=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    [[ -n $title ]] && cmd2+=(-metadata title="$title")
+    [[ -n $fc ]] && cmd2+=(-filter_complex "$fc" -map "[v]") || cmd2+=(-map 0:v:0)
+    cmd2+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
+    cmd2+=(-x265-params "$x265p:pass=2:stats=$stats")
+    cmd2+=(-b:v "$bitrate" -minrate "$minrate" -maxrate "$maxrate" -bufsize "$bufsize")
+    cmd2+=(-preset:v "$preset")
+    cmd2+=($streams -default_mode infer_no_subs -loglevel warning "$out")
+    
+    run_ffmpeg_with_progress "CBR Second Pass (Final Encoding)" "$input_duration" "${cmd2[@]}" || { 
+        log ERROR "CBR second pass failed"; exit 1; 
+    }
+    
+    # Cleanup stats
+    rm -f "${stats}"* 2>/dev/null || true
+}
+
+# Two-pass ABR encoding (current behavior)
+run_abr_encoding() {
+    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 bitrate=$8 stats=$9
+    
+    local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
+    local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
+    local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
+    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | cut -d= -f2)
+    local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
+    
+    log INFO "Starting two-pass ABR encoding (Average Bitrate)..."
+
+    local cmd1=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    [[ -n $title ]] && cmd1+=(-metadata title="$title")
+    [[ -n $fc ]] && cmd1+=(-filter_complex "$fc" -map "[v]") || cmd1+=(-map 0:v:0)
+    cmd1+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
+    cmd1+=(-x265-params "$x265p:pass=1:no-slow-firstpass=1:stats=$stats")
     cmd1+=(-b:v "$bitrate" -preset:v slow -an -sn -dn -f mp4 -loglevel warning /dev/null)
     
-    run_ffmpeg_with_progress "First Pass (Analyse)" "$input_duration" "${cmd1[@]}" || { 
-        log ERROR "First pass failed"; exit 1; 
+    run_ffmpeg_with_progress "ABR First Pass (Analysis)" "$input_duration" "${cmd1[@]}" || { 
+        log ERROR "ABR first pass failed"; exit 1; 
     }
 
     # Second pass with progress
@@ -681,24 +813,17 @@ run_encoding() {
     cmd2+=(-b:v "$bitrate" -preset:v "$preset")
     cmd2+=($streams -default_mode infer_no_subs -loglevel warning "$out")
     
-    run_ffmpeg_with_progress "Second Pass (Final Encoding)" "$input_duration" "${cmd2[@]}" || { 
-        log ERROR "Second pass failed"; exit 1; 
+    run_ffmpeg_with_progress "ABR Second Pass (Final Encoding)" "$input_duration" "${cmd2[@]}" || { 
+        log ERROR "ABR second pass failed"; exit 1; 
     }
 
-    # Cleanup
+    # Cleanup stats
     rm -f "${stats}"* 2>/dev/null || true
-    
-    # Final statistics
-    local input_size=$(du -h "$in" | cut -f1)
-    local output_size=$(du -h "$out" | cut -f1)
-    local compression_ratio=$(echo "scale=1; $(du -k "$in" | cut -f1) / $(du -k "$out" | cut -f1)" | bc -l 2>/dev/null || echo "N/A")
-    log INFO "Compression: $input_size → $output_size (Ratio: ${compression_ratio}:1)"
-    log INFO "Encoding completed successfully!"
 }
 
 # Main function
 main() {
-    local input="" output="" profile="" title="" crop="" scale=""
+    local input="" output="" profile="" title="" crop="" scale="" mode="abr"
 
     # Check dependencies
     for tool in ffmpeg ffprobe bc; do
@@ -714,20 +839,32 @@ main() {
             -t|--title)    title="$2"; shift 2 ;;
             -c|--crop)     crop="$2"; shift 2 ;;
             -s|--scale)    scale="$2"; shift 2 ;;
+            -m|--mode)     mode="$2"; shift 2 ;;
             -h|--help)     
-                echo "Advanced FFmpeg Two-Pass Encoder with Auto-Crop and HDR Detection for x265 encoding"
+                echo "Advanced FFmpeg Encoder with Multi-Mode Support, Auto-Crop and HDR Detection"
                 echo "Usage: $0 -i INPUT -o OUTPUT -p PROFILE [OPTIONS]"
                 echo ""
                 echo "Available Profiles: ${!BASE_PROFILES[*]}"
+                echo ""
+                echo "Encoding Modes:"
+                echo "  crf    Single-pass Constant Rate Factor (Pure VBR) - Best for archival/mastering"
+                echo "  abr    Two-pass Average Bitrate (Default) - Best for streaming/delivery"
+                echo "  cbr    Two-pass Constant Bitrate - Best for broadcast/live streaming"
                 echo ""
                 echo "Options:"
                 echo "  -i, --input   Input video file"
                 echo "  -o, --output  Output video file"  
                 echo "  -p, --profile Encoding profile (content-type based)"
+                echo "  -m, --mode    Encoding mode: crf, abr, cbr (default: abr)"
                 echo "  -t, --title   Video title metadata"
                 echo "  -c, --crop    Manual crop (format: w:h:x:y)"
                 echo "  -s, --scale   Scale resolution (format: w:h)"
                 echo "  -h, --help    Show this help"
+                echo ""
+                echo "Examples:"
+                echo "  $0 -i input.mkv -o output.mkv -p 1080p_anime -m crf    # Single-pass CRF"
+                echo "  $0 -i input.mkv -o output.mkv -p 4k_film -m abr       # Two-pass ABR (default)"
+                echo "  $0 -i input.mkv -o output.mkv -p 1080p_film -m cbr    # Two-pass CBR"
                 echo ""
                 exit 0 ;;
             *) log ERROR "Unknown option: $1"; exit 1 ;;
@@ -737,10 +874,17 @@ main() {
     [[ -n $input && -n $output && -n $profile ]] || { 
         log ERROR "Missing arguments: -i INPUT -o OUTPUT -p PROFILE"; exit 1; 
     }
+    
+    # Validate mode parameter
+    case $mode in
+        "crf"|"abr"|"cbr") ;; # Valid modes
+        *) log ERROR "Invalid mode: $mode. Use: crf, abr, or cbr"; exit 1 ;;
+    esac
+    
     validate_input "$input"
 
     log INFO "Starting content-adaptive encoding with auto-crop and HDR detection..."
-    run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale"
+    run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode"
 }
 
 # Execute script
