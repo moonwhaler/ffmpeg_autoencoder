@@ -178,12 +178,12 @@ log() {
     local msg=$*
     local ts=$(date '+%Y-%m-%d %H:%M:%S')
     case $level in
-        INFO)  echo -e "${GREEN}[INFO]${NC} ${ts} - ${msg}" ;;
-        WARN)  echo -e "${YELLOW}[WARN ]${NC} ${ts} - ${msg}" ;;
-        ERROR) echo -e "${RED}[ERROR]${NC} ${ts} - ${msg}" ;;
-        DEBUG) echo -e "${BLUE}[DEBUG]${NC} ${ts} - ${msg}" ;;
-        ANALYSIS) echo -e "${PURPLE}[ANALYSIS]${NC} ${ts} - ${msg}" ;;
-        CROP) echo -e "${CYAN}[CROP]${NC} ${ts} - ${msg}" ;;
+        INFO)  echo -e "${GREEN}[INFO]${NC} ${ts} - ${msg}" >&2 ;;
+        WARN)  echo -e "${YELLOW}[WARN ]${NC} ${ts} - ${msg}" >&2 ;;
+        ERROR) echo -e "${RED}[ERROR]${NC} ${ts} - ${msg}" >&2 ;;
+        DEBUG) echo -e "${BLUE}[DEBUG]${NC} ${ts} - ${msg}" >&2 ;;
+        ANALYSIS) echo -e "${PURPLE}[ANALYSIS]${NC} ${ts} - ${msg}" >&2 ;;
+        CROP) echo -e "${CYAN}[CROP]${NC} ${ts} - ${msg}" >&2 ;;
     esac
 }
 
@@ -202,16 +202,16 @@ detect_crop_values() {
     local detection_duration=${2:-300}
     local min_threshold=${3:-20}
     
-    log CROP "Starting automatic crop detection..." >&2
+    log CROP "Starting automatic crop detection..."
     
     # HDR detection for adaptive crop limits  
     local is_hdr=$(extract_hdr_metadata "$input")
     local crop_limit=16
     if [[ "$is_hdr" == "true" ]]; then
         crop_limit=64  # Higher threshold for HDR content as black bars are not pure black
-        log CROP "HDR content detected - using adjusted crop limit: $crop_limit" >&2
+        log CROP "HDR content detected - using adjusted crop limit: $crop_limit"
     else
-        log CROP "SDR content - using standard crop limit: $crop_limit" >&2
+        log CROP "SDR content - using standard crop limit: $crop_limit"
     fi
     
     # Determine video duration
@@ -268,14 +268,14 @@ detect_crop_values() {
         local significant_crop=$(echo "$percentage_diff > 1.0" | bc -l 2>/dev/null || echo "0")
         
         if [[ $total_diff -ge $min_threshold ]] || [[ $significant_crop -eq 1 ]]; then
-            log CROP "Crop detected: ${orig_w}x${orig_h} → ${crop_w}x${crop_h} (${total_diff} pixels, ${percentage_diff}%)" >&2
+            log CROP "Crop detected: ${orig_w}x${orig_h} → ${crop_w}x${crop_h} (${total_diff} pixels, ${percentage_diff}%)"
             echo "$most_common_crop"
         else
-            log CROP "No significant crop required (${total_diff} pixels, ${percentage_diff}%)" >&2
+            log CROP "No significant crop required (${total_diff} pixels, ${percentage_diff}%)"
             echo ""
         fi
     else
-        log CROP "No black bars detected" >&2
+        log CROP "No black bars detected"
         echo ""
     fi
 }
@@ -543,10 +543,10 @@ build_filter_chain() {
     local final_crop=""
     if [[ -n "$manual_crop" ]]; then
         final_crop="crop=$manual_crop"
-        log DEBUG "Using manual crop: $manual_crop" >&2
+        log DEBUG "Using manual crop: $manual_crop"
     elif [[ -n "$auto_crop" ]]; then
         final_crop="$auto_crop"
-        log DEBUG "Using automatic crop: $auto_crop" >&2
+        log DEBUG "Using automatic crop: $auto_crop"
     fi
     
     if [[ -n "$final_crop" ]]; then
@@ -593,7 +593,6 @@ parse_and_adapt_profile() {
     
     # HDR Detection
     local is_hdr=$(extract_hdr_metadata "$input_file")
-    log ANALYSIS "HDR Detection: $is_hdr" >&2
     
     # Extract base values
     local base_bitrate=$(echo "$str" | grep -o 'base_bitrate=[^:]*' | cut -d= -f2)
@@ -607,18 +606,18 @@ parse_and_adapt_profile() {
     if [[ "$is_hdr" == "true" ]]; then
         selected_bitrate="$hdr_bitrate"
         selected_crf=$(echo "scale=1; $base_crf + 2" | bc -l 2>/dev/null || echo "$base_crf")  # Slightly higher CRF for HDR
-        log ANALYSIS "HDR content detected - using HDR optimized parameters" >&2
+        log ANALYSIS "HDR content detected - using HDR optimized parameters"
     fi
     
     # Perform complexity analysis
-    log ANALYSIS "Starting content analysis for adaptive parameter optimization..." >&2
+    log ANALYSIS "Starting content analysis for adaptive parameter optimization..."
     local complexity_score=$(perform_complexity_analysis "$input_file")
     
     # Calculate adaptive parameters
     local adaptive_bitrate=$(calculate_adaptive_bitrate "$selected_bitrate" "$complexity_score" "$content_type")
     local adaptive_crf=$(calculate_adaptive_crf "$selected_crf" "$complexity_score")
     
-    log ANALYSIS "Adaptive parameters - Bitrate: $selected_bitrate → $adaptive_bitrate, CRF: $selected_crf → $adaptive_crf (Complexity: $complexity_score)" >&2
+    log ANALYSIS "Adaptive parameters - Bitrate: $selected_bitrate → $adaptive_bitrate, CRF: $selected_crf → $adaptive_crf (Complexity: $complexity_score)"
     
     # Update profile with adaptive values and remove helper fields
     local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|hdr_bitrate=[^:]*||" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
@@ -626,7 +625,7 @@ parse_and_adapt_profile() {
     # Add HDR-specific parameters if HDR content is detected
     if [[ "$is_hdr" == "true" ]]; then
         adapted_profile="${adapted_profile}:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1"
-        log ANALYSIS "HDR encoding parameters added" >&2
+        log ANALYSIS "HDR encoding parameters added"
     fi
     
     echo "$adapted_profile"
