@@ -53,40 +53,51 @@ Each profile includes content-type specific optimizations:
 
 **CRF Mode (Quality-Based, Variable Size):**
 ```bash
+# With custom output filename
 ./ffmpeg_encoder.sh -i input.mkv -o output.mkv -p 1080p_anime -m crf
+# With UUID-based auto naming
+./ffmpeg_encoder.sh -i input.mkv -p 1080p_anime -m crf
+# With title metadata
 ./ffmpeg_encoder.sh -i input.mp4 -o output.mp4 -p 4k_film_hdr -m crf -t "Movie Title"
-./ffmpeg_encoder.sh -i cgi_movie.mkv -o output.mkv -p 1080p_3d_animation -m crf
 ```
 
 **ABR Mode (Streaming/Delivery, Predictable Size):**
 ```bash
-./ffmpeg_encoder.sh -i input.mkv -o output.mkv -p 1080p_anime -m abr
-./ffmpeg_encoder.sh -i input.mp4 -o output.mp4 -p 4k_film_hdr -m abr -t "Movie Title"
+# UUID-based naming (recommended for batch workflows)
+./ffmpeg_encoder.sh -i input.mkv -p 1080p_anime -m abr
+# Custom output filename
+./ffmpeg_encoder.sh -i input.mp4 -o stream_ready.mp4 -p 4k_film_hdr -m abr -t "Movie Title"
+# With manual crop
 ./ffmpeg_encoder.sh -i input.mkv -o output.mkv -p 1080p_film -m abr -c 1920:800:0:140
 ```
 
 **CBR Mode (Broadcast/Live, Constant Bitrate):**
 ```bash
-./ffmpeg_encoder.sh -i input.mkv -o output.mkv -p 1080p_anime -m cbr
-./ffmpeg_encoder.sh -i broadcast.mkv -o output.mkv -p 1080p_film -m cbr
+# Auto-generated UUID output
+./ffmpeg_encoder.sh -i input.mkv -p 1080p_anime -m cbr
+# Custom broadcast filename
+./ffmpeg_encoder.sh -i broadcast.mkv -o broadcast_ready.mkv -p 1080p_film -m cbr
 ```
 
 **Default Mode (ABR if not specified):**
 ```bash
-./ffmpeg_encoder.sh -i input.mkv -o output.mkv -p 1080p_anime
-# Equivalent to: ./ffmpeg_encoder.sh -i input.mkv -o output.mkv -p 1080p_anime -m abr
+./ffmpeg_encoder.sh -i input.mkv -p 1080p_anime
+# Equivalent to: ./ffmpeg_encoder.sh -i input.mkv -p 1080p_anime -m abr
+# Output: input_[UUID].mkv in same directory
 ```
 
 ### Batch Processing with Modes
 ```bash
-# CRF batch processing for archival
-./ffmpeg_batch_encoder.sh -i ~/Videos/Raw -o ~/Videos/Archive -p 1080p_anime -m crf
+# CRF batch processing for archival (files encoded in same directory)
+./ffmpeg_batch_encoder.sh -i ~/Videos/Raw -p 1080p_anime -m crf
 
 # ABR batch processing for streaming (default)
-./ffmpeg_batch_encoder.sh -i ~/Videos/Raw -o ~/Videos/Stream -p 1080p_anime -m abr
+./ffmpeg_batch_encoder.sh -i ~/Videos/Raw -p 1080p_anime -m abr
 
 # CBR batch processing for broadcast
-./ffmpeg_batch_encoder.sh -i ~/Videos/Raw -o ~/Videos/Broadcast -p 1080p_film -m cbr
+./ffmpeg_batch_encoder.sh -i ~/Videos/Raw -p 1080p_film -m cbr
+
+# All output files automatically use UUID naming: filename_[UUID].ext
 ```
 
 ### View Available Profiles and Modes
@@ -159,7 +170,7 @@ Content Type Modifiers:
 - `ffmpeg` with libx265 support and advanced filters
 - `ffprobe` for stream analysis and metadata extraction  
 - `bc` for floating-point arithmetic calculations
-- `uuidgen` for batch processing unique file names
+- `uuidgen` for UUID-based output naming (both single and batch scripts)
 
 ## Progress Visualization System
 Scripts include sophisticated progress tracking:
@@ -205,9 +216,12 @@ Scripts include sophisticated progress tracking:
 ## Important Notes for Claude Code Users
 
 When working with this codebase, remember:
-1. **Mode parameter is optional** - defaults to `abr` if not specified
-2. **All existing features work in all modes** - crop detection, HDR support, stream preservation
-3. **Content-type awareness affects both CRF and bitrate** in all modes
-4. **CRF mode ignores bitrate completely** - uses only quality-based encoding
-5. **CBR mode adds buffer constraints** for constant bitrate output
-6. **Complexity analysis runs for all modes** - provides adaptive parameter optimization
+1. **Output parameter (-o) is now optional** - defaults to UUID-based naming in same directory
+2. **Mode parameter is optional** - defaults to `abr` if not specified
+3. **All existing features work in all modes** - crop detection, HDR support, stream preservation
+4. **Content-type awareness affects both CRF and bitrate** in all modes
+5. **CRF mode ignores bitrate completely** - uses only quality-based encoding
+6. **CBR mode adds buffer constraints** for constant bitrate output
+7. **Complexity analysis runs for all modes** - provides adaptive parameter optimization
+8. **UUID naming prevents overwrites** - both single and batch scripts use consistent naming
+9. **Batch script no longer needs output directory** - simplified workflow with in-place processing

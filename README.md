@@ -74,14 +74,16 @@ Film:          Base CRF + 0.0  (balanced live-action optimization)
 
 #### **Updated Syntax**
 ```bash
-./ffmpeg_encoder.sh -i INPUT -o OUTPUT -p PROFILE [OPTIONS]
+./ffmpeg_encoder.sh -i INPUT [-o OUTPUT] -p PROFILE [OPTIONS]
 ```
 
 #### **Parameters**
 - **Required**:
   - `-i, --input`: Input video file
-  - `-o, --output`: Output file path  
   - `-p, --profile`: Encoding profile selection
+  
+- **Optional Output**:
+  - `-o, --output`: Output file path (optional, defaults to input_UUID.ext in same directory)
   
 - **Optional**:
   - **`-m, --mode`**: Encoding mode: `crf`, `abr`, `cbr` (default: `abr`) 🆕
@@ -98,8 +100,8 @@ Film:          Base CRF + 0.0  (balanced live-action optimization)
 # CRF mode for archival (highest quality, variable size)
 ./ffmpeg_encoder.sh -i anime.mkv -o anime_archive.mkv -p 1080p_anime -m crf
 
-# ABR mode for streaming (predictable size, high quality)  
-./ffmpeg_encoder.sh -i anime.mkv -o anime_stream.mkv -p 1080p_anime -m abr
+# ABR mode for streaming with auto-generated UUID output
+./ffmpeg_encoder.sh -i anime.mkv -p 1080p_anime -m abr
 
 # CBR mode for broadcast (constant bandwidth)
 ./ffmpeg_encoder.sh -i anime.mkv -o anime_broadcast.mkv -p 1080p_anime -m cbr
@@ -107,19 +109,19 @@ Film:          Base CRF + 0.0  (balanced live-action optimization)
 
 **3D Animation/CGI:**
 ```bash
-# Preserve CGI detail with 3D animation profile
-./ffmpeg_encoder.sh -i pixar_movie.mkv -o output.mkv -p 4k_3d_animation -m crf
+# Preserve CGI detail with auto-generated UUID output
+./ffmpeg_encoder.sh -i pixar_movie.mkv -p 4k_3d_animation -m crf
 
-# Streaming delivery with predictable file size
-./ffmpeg_encoder.sh -i cgi_series.mkv -o output.mkv -p 1080p_3d_animation -m abr
+# Streaming delivery with custom output name
+./ffmpeg_encoder.sh -i cgi_series.mkv -o cgi_optimized.mkv -p 1080p_3d_animation -m abr
 ```
 
 **Live-Action Film:**
 ```bash  
-# Master archive with maximum quality
-./ffmpeg_encoder.sh -i film.mkv -o film_master.mkv -p 4k_film -m crf
+# Master archive with UUID-based naming
+./ffmpeg_encoder.sh -i film.mkv -p 4k_film -m crf
 
-# Streaming distribution
+# Streaming distribution with custom output
 ./ffmpeg_encoder.sh -i film.mkv -o film_stream.mkv -p 1080p_film -m abr
 
 # Broadcast transmission (constant bitrate)
@@ -196,8 +198,13 @@ Balanced parameters for natural motion, lighting, and live-action content.
 
 ### Batch Syntax
 ```bash
-./ffmpeg_batch_encoder.sh -i INPUT_DIR -o OUTPUT_DIR -p PROFILE [-m MODE]
+./ffmpeg_batch_encoder.sh -i INPUT_DIR -p PROFILE [-m MODE]
 ```
+
+**Key Changes:**
+- **No Output Directory**: Files are encoded in the same directory as source files
+- **UUID Naming**: Automatic UUID-based naming prevents overwrites (input_UUID.ext)
+- **Simplified Workflow**: Reduced parameters for easier batch processing
 
 ## Professional Use Case Guide
 
@@ -262,7 +269,7 @@ Balanced parameters for natural motion, lighting, and live-action content.
 - **ffmpeg**: With libx265 support and advanced filters
 - **ffprobe**: For stream analysis and metadata extraction  
 - **bc**: For floating-point arithmetic calculations
-- **uuidgen**: For batch processing unique naming (batch script only)
+- **uuidgen**: For UUID-based output naming (both scripts)
 
 ### **Supported Input Formats**
 - **Containers**: .mkv, .mp4, .mov, .m4v
