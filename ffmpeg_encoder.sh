@@ -830,7 +830,7 @@ main() {
     local input="" output="" profile="" title="" crop="" scale="" mode="abr"
 
     # Check dependencies
-    for tool in ffmpeg ffprobe bc; do
+    for tool in ffmpeg ffprobe bc uuidgen; do
         command -v $tool >/dev/null || { log ERROR "$tool missing (install: apt install $tool)"; exit 1; }
     done
 
@@ -846,7 +846,7 @@ main() {
             -m|--mode)     mode="$2"; shift 2 ;;
             -h|--help)     
                 echo "Advanced FFmpeg Encoder with Multi-Mode Support, Auto-Crop and HDR Detection"
-                echo "Usage: $0 -i INPUT -o OUTPUT -p PROFILE [OPTIONS]"
+                echo "Usage: $0 -i INPUT [-o OUTPUT] -p PROFILE [OPTIONS]"
                 echo ""
                 echo "Available Profiles: ${!BASE_PROFILES[*]}"
                 echo ""
@@ -857,7 +857,7 @@ main() {
                 echo ""
                 echo "Options:"
                 echo "  -i, --input   Input video file"
-                echo "  -o, --output  Output video file"  
+                echo "  -o, --output  Output video file (optional, defaults to input_UUID.ext)"  
                 echo "  -p, --profile Encoding profile (content-type based)"
                 echo "  -m, --mode    Encoding mode: crf, abr, cbr (default: abr)"
                 echo "  -t, --title   Video title metadata"
@@ -867,7 +867,7 @@ main() {
                 echo ""
                 echo "Examples:"
                 echo "  $0 -i input.mkv -o output.mkv -p 1080p_anime -m crf    # Single-pass CRF"
-                echo "  $0 -i input.mkv -o output.mkv -p 4k_film -m abr       # Two-pass ABR (default)"
+                echo "  $0 -i input.mkv -p 4k_film -m abr                    # Two-pass ABR with UUID output"
                 echo "  $0 -i input.mkv -o output.mkv -p 1080p_film -m cbr    # Two-pass CBR"
                 echo ""
                 exit 0 ;;
@@ -875,8 +875,22 @@ main() {
         esac
     done
 
-    [[ -n $input && -n $output && -n $profile ]] || { 
-        log ERROR "Missing arguments: -i INPUT -o OUTPUT -p PROFILE"; exit 1; 
+    # Generate UUID-based output filename if not provided
+    if [[ -z $output ]]; then
+        if [[ -z $input ]]; then
+            log ERROR "Input file (-i) is required"; exit 1
+        fi
+        local basename="$(basename "$input")"
+        local name="${basename%.*}"
+        local ext="${basename##*.}"
+        local uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+        local input_dir="$(dirname "$input")"
+        output="${input_dir}/${name}_${uuid}.${ext}"
+        log INFO "Generated output filename: $(basename "$output")"
+    fi
+    
+    [[ -n $input && -n $profile ]] || { 
+        log ERROR "Missing required arguments: -i INPUT -p PROFILE"; exit 1; 
     }
     
     # Validate mode parameter
