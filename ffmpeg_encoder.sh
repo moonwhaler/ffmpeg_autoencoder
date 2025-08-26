@@ -22,7 +22,6 @@ STATS_PREFIX="ffmpeg_stats_$$"
 # Basis-Profil-Definitionen
 declare -A BASE_PROFILES
 
-
 # 1080p Profile
 BASE_PROFILES["1080p_anime"]="preset=slow:crf=20:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=4000:content_type=anime"
 BASE_PROFILES["1080p_anime_hdr"]="preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=5000:content_type=anime"
@@ -32,12 +31,12 @@ BASE_PROFILES["1080p_film"]="preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main
 BASE_PROFILES["1080p_film_hdr"]="preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=6000:content_type=film"
 
 # 4K Profile
-BASE_PROFILES["4k_anime"]="preset=medium:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=15000:content_type=anime"
-BASE_PROFILES["4k_anime_hdr"]="preset=medium:crf=24:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=18000:content_type=anime"
-BASE_PROFILES["4k_3d_animation"]="preset=medium:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=20000:content_type=3d_animation"
-BASE_PROFILES["4k_3d_animation_hdr"]="preset=medium:crf=22:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=25000:content_type=3d_animation"
-BASE_PROFILES["4k_film"]="preset=medium:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=18000:content_type=film"
-BASE_PROFILES["4k_film_hdr"]="preset=medium:crf=23:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=22000:content_type=film"
+BASE_PROFILES["4k_anime"]="preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=15000:content_type=anime"
+BASE_PROFILES["4k_anime_hdr"]="preset=slow:crf=24:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=18000:content_type=anime"
+BASE_PROFILES["4k_3d_animation"]="preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=20000:content_type=3d_animation"
+BASE_PROFILES["4k_3d_animation_hdr"]="preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=25000:content_type=3d_animation"
+BASE_PROFILES["4k_film"]="preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=18000:content_type=film"
+BASE_PROFILES["4k_film_hdr"]="preset=slow:crf=23:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=22000:content_type=film"
 
 # Progress Bar Funktionen
 show_progress() {
@@ -293,10 +292,32 @@ calculate_spatial_information() {
     local duration=$(get_video_duration "$input")
     local analysis_time=$((duration > 300 ? 30 : duration / 10))
     
+    local si_temp_file="${TEMP_DIR}/si_output_$$.tmp"
+    
+    # Run analysis with progress bar displayed to stderr
+    bash -c "ffmpeg -i '$input' -vf 'sobel,crop=iw-4:ih-4:2:2' -t 30 -f null - 2>&1 | grep -o 'frame=.*fps' | tail -1 | grep -o '[0-9]*fps' | sed 's/fps//' || echo '50'" > "$si_temp_file" &
+    local pid=$!
+    
+    # Show progress while analysis runs
+    local elapsed=0
+    while kill -0 "$pid" 2>/dev/null && [[ $elapsed -lt $analysis_time ]]; do
+        show_progress "$elapsed" "$analysis_time" "Spatial Information"
+        sleep 1
+        ((elapsed++))
+    done
+    
+    wait "$pid"
+    show_progress "$analysis_time" "$analysis_time" "Spatial Information"
+    printf "\n"
+    
     local si
-    si=$(run_with_progress "Spatial Information" $analysis_time \
-        bash -c "ffmpeg -i '$input' -vf 'sobel,crop=iw-4:ih-4:2:2' -t 30 -f null - 2>&1 | \
-        grep -o 'frame=.*fps' | tail -1 | grep -o '[0-9]*fps' | sed 's/fps//' || echo '50'")
+    si=$(cat "$si_temp_file" 2>/dev/null || echo "50")
+    rm -f "$si_temp_file" 2>/dev/null || true
+    
+    # Validate si is numeric
+    if ! [[ "$si" =~ ^[0-9]+$ ]]; then
+        si="50"
+    fi
     
     echo "${si:-50}"
 }
@@ -305,11 +326,33 @@ calculate_spatial_information() {
 calculate_temporal_information() {
     local input=$1
     
+    local ti_temp_file="${TEMP_DIR}/ti_output_$$.tmp"
+    
+    # Run analysis with progress bar displayed to stderr
+    bash -c "ffprobe -v error -select_streams v:0 -read_intervals '%+#900' -show_frames -show_entries frame=pict_type '$input' 2>/dev/null | awk 'BEGIN{p=0;t=0} /pict_type=P|pict_type=B/{p++} /pict_type=/{t++} END{print (t>0 ? p*100/t : 50)}' || echo '50'" > "$ti_temp_file" &
+    local pid=$!
+    
+    # Show progress while analysis runs
+    local elapsed=0
+    local analysis_time=10
+    while kill -0 "$pid" 2>/dev/null && [[ $elapsed -lt $analysis_time ]]; do
+        show_progress "$elapsed" "$analysis_time" "Temporal Information"
+        sleep 1
+        ((elapsed++))
+    done
+    
+    wait "$pid"
+    show_progress "$analysis_time" "$analysis_time" "Temporal Information"
+    printf "\n"
+    
     local ti
-    ti=$(run_with_progress "Temporal Information" 10 \
-        bash -c "ffprobe -v error -select_streams v:0 -read_intervals '%+#900' \
-        -show_frames -show_entries frame=pict_type '$input' 2>/dev/null | \
-        awk 'BEGIN{p=0;t=0} /pict_type=P|pict_type=B/{p++} /pict_type=/{t++} END{print (t>0 ? p*100/t : 50)}' || echo '50'")
+    ti=$(cat "$ti_temp_file" 2>/dev/null || echo "50")
+    rm -f "$ti_temp_file" 2>/dev/null || true
+    
+    # Validate ti is numeric
+    if ! [[ "$ti" =~ ^[0-9.]+$ ]]; then
+        ti="50"
+    fi
     
     echo "${ti:-50}"
 }
@@ -318,10 +361,33 @@ calculate_temporal_information() {
 analyze_scene_changes() {
     local input=$1
     
+    local sc_temp_file="${TEMP_DIR}/sc_output_$$.tmp"
+    
+    # Run analysis with progress bar displayed to stderr
+    bash -c "ffmpeg -i '$input' -vf \"select='gt(scene,0.3)',showinfo\" -t 60 -f null - 2>&1 | grep -c 'Parsed_showinfo' || echo '10'" > "$sc_temp_file" &
+    local pid=$!
+    
+    # Show progress while analysis runs
+    local elapsed=0
+    local analysis_time=60
+    while kill -0 "$pid" 2>/dev/null && [[ $elapsed -lt $analysis_time ]]; do
+        show_progress "$elapsed" "$analysis_time" "Scene Change Analyse"
+        sleep 1
+        ((elapsed++))
+    done
+    
+    wait "$pid"
+    show_progress "$analysis_time" "$analysis_time" "Scene Change Analyse"
+    printf "\n"
+    
     local scene_changes
-    scene_changes=$(run_with_progress "Scene Change Analyse" 60 \
-        bash -c "ffmpeg -i '$input' -vf \"select='gt(scene,0.3)',showinfo\" -t 60 \
-        -f null - 2>&1 | grep -c 'Parsed_showinfo' || echo '10'")
+    scene_changes=$(cat "$sc_temp_file" 2>/dev/null || echo "10")
+    rm -f "$sc_temp_file" 2>/dev/null || true
+    
+    # Validate scene_changes is numeric
+    if ! [[ "$scene_changes" =~ ^[0-9]+$ ]]; then
+        scene_changes="10"
+    fi
     
     echo "${scene_changes:-10}"
 }
@@ -330,11 +396,33 @@ analyze_scene_changes() {
 analyze_frame_distribution() {
     local input=$1
     
+    local fd_temp_file="${TEMP_DIR}/fd_output_$$.tmp"
+    
+    # Run analysis with progress bar displayed to stderr
+    bash -c "ffprobe -v error -select_streams v:0 -read_intervals '%+#1800' -show_frames -show_entries frame=pict_type '$input' 2>/dev/null | awk 'BEGIN{i=0;total=0} /pict_type=I/{i++} /pict_type=/{total++} END{print (total>0 ? i*200/total : 4)}' || echo '4'" > "$fd_temp_file" &
+    local pid=$!
+    
+    # Show progress while analysis runs
+    local elapsed=0
+    local analysis_time=15
+    while kill -0 "$pid" 2>/dev/null && [[ $elapsed -lt $analysis_time ]]; do
+        show_progress "$elapsed" "$analysis_time" "Frame Distribution"
+        sleep 1
+        ((elapsed++))
+    done
+    
+    wait "$pid"
+    show_progress "$analysis_time" "$analysis_time" "Frame Distribution"
+    printf "\n"
+    
     local frame_complexity
-    frame_complexity=$(run_with_progress "Frame Distribution" 15 \
-        bash -c "ffprobe -v error -select_streams v:0 -read_intervals '%+#1800' \
-        -show_frames -show_entries frame=pict_type '$input' 2>/dev/null | \
-        awk 'BEGIN{i=0;total=0} /pict_type=I/{i++} /pict_type=/{total++} END{print (total>0 ? i*200/total : 4)}' || echo '4'")
+    frame_complexity=$(cat "$fd_temp_file" 2>/dev/null || echo "4")
+    rm -f "$fd_temp_file" 2>/dev/null || true
+    
+    # Validate frame_complexity is numeric
+    if ! [[ "$frame_complexity" =~ ^[0-9.]+$ ]]; then
+        frame_complexity="4"
+    fi
     
     echo "${frame_complexity:-4}"
 }
@@ -367,11 +455,23 @@ perform_complexity_analysis() {
     local frame_complexity=$(analyze_frame_distribution "$input")
     local is_hdr=$(extract_hdr_metadata "$input")
     
+    # Validate all metrics are numeric and provide defaults
+    [[ "$si" =~ ^[0-9.]+$ ]] || si="50"
+    [[ "$ti" =~ ^[0-9.]+$ ]] || ti="50"
+    [[ "$scene_changes" =~ ^[0-9.]+$ ]] || scene_changes="10"
+    [[ "$frame_complexity" =~ ^[0-9.]+$ ]] || frame_complexity="4"
+    
     log ANALYSIS "SI: $si, TI: $ti, Scenes/min: $scene_changes, Frame-Komplexität: $frame_complexity"
     log ANALYSIS "HDR Content: $is_hdr"
     
     # Komplexitäts-Score berechnen
-    local complexity_score=$(echo "scale=2; ($si * 0.3) + ($ti * 0.4) + ($scene_changes * 2) + ($frame_complexity * 0.3)" | bc -l 2>/dev/null || echo "50")
+    local complexity_score
+    complexity_score=$(echo "scale=2; ($si * 0.3) + ($ti * 0.4) + ($scene_changes * 2) + ($frame_complexity * 0.3)" | bc -l 2>/dev/null || echo "50")
+    
+    # Validate complexity_score is numeric
+    if ! [[ "$complexity_score" =~ ^[0-9.]+$ ]]; then
+        complexity_score="50"
+    fi
     
     # Score begrenzen
     if (( $(echo "$complexity_score > 100" | bc -l 2>/dev/null || echo 0) )); then
@@ -390,6 +490,10 @@ calculate_adaptive_bitrate() {
     local complexity_score=$2
     local content_type=$3
     
+    # Validate inputs
+    [[ "$base_bitrate" =~ ^[0-9]+$ ]] || base_bitrate="25000"
+    [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
+    
     local base_value=$(echo "$base_bitrate" | sed 's/k$//')
     
     local type_modifier=1.0
@@ -399,10 +503,14 @@ calculate_adaptive_bitrate() {
         "film")          type_modifier=1.0 ;;
     esac
     
-    local complexity_factor=$(echo "scale=3; 0.7 + ($complexity_score / 100 * 0.6)" | bc -l 2>/dev/null || echo "1.0")
-    local adaptive_bitrate=$(echo "scale=0; $base_value * $complexity_factor * $type_modifier / 1" | bc -l 2>/dev/null || echo "$base_value")
+    local complexity_factor
+    complexity_factor=$(echo "scale=3; 0.7 + ($complexity_score / 100 * 0.6)" | bc -l 2>/dev/null || echo "1.0")
+    [[ "$complexity_factor" =~ ^[0-9.]+$ ]] || complexity_factor="1.0"
     
-    log ANALYSIS "Basis-Bitrate: $base_bitrate, Angepasste Bitrate: ${adaptive_bitrate}k"
+    local adaptive_bitrate
+    adaptive_bitrate=$(echo "scale=0; $base_value * $complexity_factor * $type_modifier / 1" | bc -l 2>/dev/null || echo "$base_value")
+    [[ "$adaptive_bitrate" =~ ^[0-9]+$ ]] || adaptive_bitrate="$base_value"
+    
     echo "${adaptive_bitrate}k"
 }
 
@@ -411,16 +519,23 @@ calculate_adaptive_crf() {
     local base_crf=$1
     local complexity_score=$2
     
-    local crf_adjustment=$(echo "scale=1; ($complexity_score - 50) * (-0.05)" | bc -l 2>/dev/null || echo "0")
-    local adaptive_crf=$(echo "scale=1; $base_crf + $crf_adjustment" | bc -l 2>/dev/null || echo "$base_crf")
+    # Validate inputs
+    [[ "$base_crf" =~ ^[0-9.]+$ ]] || base_crf="22"
+    [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
+    
+    local crf_adjustment
+    crf_adjustment=$(echo "scale=1; ($complexity_score - 50) * (-0.05)" | bc -l 2>/dev/null || echo "0")
+    [[ "$crf_adjustment" =~ ^-?[0-9.]+$ ]] || crf_adjustment="0"
+    
+    local adaptive_crf
+    adaptive_crf=$(echo "scale=1; $base_crf + $crf_adjustment" | bc -l 2>/dev/null || echo "$base_crf")
+    [[ "$adaptive_crf" =~ ^[0-9.]+$ ]] || adaptive_crf="$base_crf"
     
     if (( $(echo "$adaptive_crf < 15" | bc -l 2>/dev/null || echo 0) )); then
         adaptive_crf="15"
     elif (( $(echo "$adaptive_crf > 28" | bc -l 2>/dev/null || echo 0) )); then
         adaptive_crf="28"
     fi
-    
-    log ANALYSIS "Basis-CRF: $base_crf, Angepasster CRF: $adaptive_crf"
     echo "$adaptive_crf"
 }
 
@@ -487,10 +602,18 @@ parse_and_adapt_profile() {
     local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | cut -d= -f2)
     local content_type=$(echo "$str" | grep -o 'content_type=[^:]*' | cut -d= -f2)
     
-    # Für den ersten Test: Verwende Basis-Werte ohne Komplexitätsanalyse
-    log ANALYSIS "Verwende Basis-Parameter - Bitrate: $base_bitrate, CRF: $base_crf" >&2
+    # Komplexitätsanalyse durchführen
+    log ANALYSIS "Starte Content-Analyse für adaptive Parameter-Optimierung..." >&2
+    local complexity_score=$(perform_complexity_analysis "$input_file")
     
-    local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$base_bitrate|" | sed "s|crf=[^:]*|crf=$base_crf|" | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
+    # Adaptive Parameter berechnen
+    local adaptive_bitrate=$(calculate_adaptive_bitrate "$base_bitrate" "$complexity_score" "$content_type")
+    local adaptive_crf=$(calculate_adaptive_crf "$base_crf" "$complexity_score")
+    
+    log ANALYSIS "Adaptive Parameter - Bitrate: $base_bitrate → $adaptive_bitrate, CRF: $base_crf → $adaptive_crf (Komplexität: $complexity_score)" >&2
+    
+    # Profil mit adaptiven Werten aktualisieren
+    local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
     
     echo "$adapted_profile"
 }
@@ -531,7 +654,7 @@ run_encoding() {
     [[ -n $fc ]] && cmd1+=(-filter_complex "$fc" -map "[v]") || cmd1+=(-map 0:v:0)
     cmd1+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
     cmd1+=(-x265-params "$x265p:pass=1:no-slow-firstpass=1:stats=$stats")
-    cmd1+=(-b:v "$bitrate" -preset:v medium -an -sn -dn -f mp4 -loglevel warning /dev/null)
+    cmd1+=(-b:v "$bitrate" -preset:v slow -an -sn -dn -f mp4 -loglevel warning /dev/null)
     
     run_ffmpeg_with_progress "First Pass (Analyse)" "$input_duration" "${cmd1[@]}" || { 
         log ERROR "First Pass fehlgeschlagen"; exit 1; 
@@ -580,16 +703,11 @@ main() {
             -c|--crop)     crop="$2"; shift 2 ;;
             -s|--scale)    scale="$2"; shift 2 ;;
             -h|--help)     
-                echo "Advanced FFmpeg Two-Pass Encoder mit Auto-Crop und Progress v2.2"
+                echo "Advanced FFmpeg Two-Pass Encoder mit Auto-Crop für x265 Enkodierung"
                 echo "Usage: $0 -i INPUT -o OUTPUT -p PROFILE [OPTIONS]"
                 echo ""
                 echo "Profile: ${!BASE_PROFILES[*]}"
                 echo ""
-                echo "Neue Features v2.2:"
-                echo "• Echtzeit-Fortschrittsanzeige für alle Phasen"
-                echo "• Automatische Crop-Erkennung mit Progress"
-                echo "• Content-adaptive Bitrate-Optimierung"
-                echo "• Vollständige Stream-Erhaltung"
                 exit 0 ;;
             *) log ERROR "Unbekannte Option: $1"; exit 1 ;;
         esac
