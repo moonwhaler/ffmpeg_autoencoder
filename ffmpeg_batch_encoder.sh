@@ -20,7 +20,9 @@ Usage: $0 -i INPUT_DIR -o OUTPUT_DIR -p PROFILE
 
   -i, --input-dir   Directory with source files
   -o, --output-dir  Target directory for encoded files
-  -p, --profile     Encoding profile (e.g. 4k_3d_animation_hdr)
+  -p, --profile     Encoding profile (e.g. 4k_3d_animation, 1080p_film)
+
+HDR content is automatically detected and optimized per file.
 
 Example:
   $0 -i ~/Videos/Raw -o ~/Videos/Encoded -p 1080p_anime

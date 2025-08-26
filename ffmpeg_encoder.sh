@@ -22,21 +22,15 @@ STATS_PREFIX="ffmpeg_stats_$$"
 # Base profile definitions
 declare -A BASE_PROFILES
 
-# 1080p Profile
-BASE_PROFILES["1080p_anime"]="preset=slow:crf=20:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=4000:content_type=anime"
-BASE_PROFILES["1080p_anime_hdr"]="preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=5000:content_type=anime"
-BASE_PROFILES["1080p_3d_animation"]="preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=6000:content_type=3d_animation"
-BASE_PROFILES["1080p_3d_animation_hdr"]="preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=7000:content_type=3d_animation"
-BASE_PROFILES["1080p_film"]="preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=5000:content_type=film"
-BASE_PROFILES["1080p_film_hdr"]="preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=6000:content_type=film"
+# 1080p Profiles
+BASE_PROFILES["1080p_anime"]="preset=slow:crf=20:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=4000:hdr_bitrate=5000:content_type=anime"
+BASE_PROFILES["1080p_3d_animation"]="preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=6000:hdr_bitrate=7000:content_type=3d_animation"
+BASE_PROFILES["1080p_film"]="preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=5000:hdr_bitrate=6000:content_type=film"
 
-# 4K Profile
-BASE_PROFILES["4k_anime"]="preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=15000:content_type=anime"
-BASE_PROFILES["4k_anime_hdr"]="preset=slow:crf=24:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=18000:content_type=anime"
-BASE_PROFILES["4k_3d_animation"]="preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=20000:content_type=3d_animation"
-BASE_PROFILES["4k_3d_animation_hdr"]="preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=25000:content_type=3d_animation"
-BASE_PROFILES["4k_film"]="preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=18000:content_type=film"
-BASE_PROFILES["4k_film_hdr"]="preset=slow:crf=23:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1:base_bitrate=22000:content_type=film"
+# 4K Profiles
+BASE_PROFILES["4k_anime"]="preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=15000:hdr_bitrate=18000:content_type=anime"
+BASE_PROFILES["4k_3d_animation"]="preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=18000:hdr_bitrate=20000:content_type=3d_animation"
+BASE_PROFILES["4k_film"]="preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=18000:hdr_bitrate=22000:content_type=film"
 
 # Progress bar functions
 show_progress() {
@@ -184,7 +178,7 @@ log() {
     local msg=$*
     local ts=$(date '+%Y-%m-%d %H:%M:%S')
     case $level in
-        INFO)  echo -e "${GREEN}[INFO ]${NC} ${ts} - ${msg}" ;;
+        INFO)  echo -e "${GREEN}[INFO]${NC} ${ts} - ${msg}" ;;
         WARN)  echo -e "${YELLOW}[WARN ]${NC} ${ts} - ${msg}" ;;
         ERROR) echo -e "${RED}[ERROR]${NC} ${ts} - ${msg}" ;;
         DEBUG) echo -e "${BLUE}[DEBUG]${NC} ${ts} - ${msg}" ;;
@@ -461,7 +455,7 @@ perform_complexity_analysis() {
     [[ "$scene_changes" =~ ^[0-9.]+$ ]] || scene_changes="10"
     [[ "$frame_complexity" =~ ^[0-9.]+$ ]] || frame_complexity="4"
     
-    log ANALYSIS "SI: $si, TI: $ti, Scenes/min: $scene_changes, Frame-Komplexität: $frame_complexity"
+    log ANALYSIS "SI: $si, TI: $ti, Scenes/min: $scene_changes, Frame-Complexity: $frame_complexity"
     log ANALYSIS "HDR Content: $is_hdr"
     
     # Calculate complexity score
@@ -491,7 +485,7 @@ calculate_adaptive_bitrate() {
     local content_type=$3
     
     # Validate inputs
-    [[ "$base_bitrate" =~ ^[0-9]+$ ]] || base_bitrate="25000"
+    [[ "$base_bitrate" =~ ^[0-9]+$ ]] || base_bitrate="18000"
     [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
     
     local base_value=$(echo "$base_bitrate" | sed 's/k$//')
@@ -597,23 +591,43 @@ parse_and_adapt_profile() {
     local str=${BASE_PROFILES[$profile_name]:-}
     [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; exit 1; }
     
+    # HDR Detection
+    local is_hdr=$(extract_hdr_metadata "$input_file")
+    log ANALYSIS "HDR Detection: $is_hdr" >&2
+    
     # Extract base values
     local base_bitrate=$(echo "$str" | grep -o 'base_bitrate=[^:]*' | cut -d= -f2)
+    local hdr_bitrate=$(echo "$str" | grep -o 'hdr_bitrate=[^:]*' | cut -d= -f2)
     local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | cut -d= -f2)
     local content_type=$(echo "$str" | grep -o 'content_type=[^:]*' | cut -d= -f2)
+    
+    # Use HDR bitrate if HDR content is detected
+    local selected_bitrate="$base_bitrate"
+    local selected_crf="$base_crf"
+    if [[ "$is_hdr" == "true" ]]; then
+        selected_bitrate="$hdr_bitrate"
+        selected_crf=$(echo "scale=1; $base_crf + 2" | bc -l 2>/dev/null || echo "$base_crf")  # Slightly higher CRF for HDR
+        log ANALYSIS "HDR content detected - using HDR optimized parameters" >&2
+    fi
     
     # Perform complexity analysis
     log ANALYSIS "Starting content analysis for adaptive parameter optimization..." >&2
     local complexity_score=$(perform_complexity_analysis "$input_file")
     
     # Calculate adaptive parameters
-    local adaptive_bitrate=$(calculate_adaptive_bitrate "$base_bitrate" "$complexity_score" "$content_type")
-    local adaptive_crf=$(calculate_adaptive_crf "$base_crf" "$complexity_score")
+    local adaptive_bitrate=$(calculate_adaptive_bitrate "$selected_bitrate" "$complexity_score" "$content_type")
+    local adaptive_crf=$(calculate_adaptive_crf "$selected_crf" "$complexity_score")
     
-    log ANALYSIS "Adaptive parameters - Bitrate: $base_bitrate → $adaptive_bitrate, CRF: $base_crf → $adaptive_crf (Complexity: $complexity_score)" >&2
+    log ANALYSIS "Adaptive parameters - Bitrate: $selected_bitrate → $adaptive_bitrate, CRF: $selected_crf → $adaptive_crf (Complexity: $complexity_score)" >&2
     
-    # Update profile with adaptive values
-    local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
+    # Update profile with adaptive values and remove helper fields
+    local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|hdr_bitrate=[^:]*||" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
+    
+    # Add HDR-specific parameters if HDR content is detected
+    if [[ "$is_hdr" == "true" ]]; then
+        adapted_profile="${adapted_profile}:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc:hdr10_opt=1"
+        log ANALYSIS "HDR encoding parameters added" >&2
+    fi
     
     echo "$adapted_profile"
 }
@@ -622,7 +636,7 @@ parse_and_adapt_profile() {
 run_encoding() {
     local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6
 
-    log INFO "Profil: $prof"
+    log INFO "Profile: $prof"
     
     # Video duration for progress
     local input_duration=$(get_video_duration "$in")
@@ -630,7 +644,6 @@ run_encoding() {
     # Automatic crop detection
     local auto_crop=""
     if [[ -z "$manual_crop" ]]; then
-        log INFO "Starting automatic crop detection..."
         auto_crop=$(detect_crop_values "$in")
         log INFO "Crop detection completed."
     fi
@@ -703,10 +716,19 @@ main() {
             -c|--crop)     crop="$2"; shift 2 ;;
             -s|--scale)    scale="$2"; shift 2 ;;
             -h|--help)     
-                echo "Advanced FFmpeg Two-Pass Encoder with Auto-Crop for x265 encoding"
+                echo "Advanced FFmpeg Two-Pass Encoder with Auto-Crop and HDR Detection for x265 encoding"
                 echo "Usage: $0 -i INPUT -o OUTPUT -p PROFILE [OPTIONS]"
                 echo ""
-                echo "Profile: ${!BASE_PROFILES[*]}"
+                echo "Available Profiles: ${!BASE_PROFILES[*]}"
+                echo ""
+                echo "Options:"
+                echo "  -i, --input   Input video file"
+                echo "  -o, --output  Output video file"  
+                echo "  -p, --profile Encoding profile (content-type based)"
+                echo "  -t, --title   Video title metadata"
+                echo "  -c, --crop    Manual crop (format: w:h:x:y)"
+                echo "  -s, --scale   Scale resolution (format: w:h)"
+                echo "  -h, --help    Show this help"
                 echo ""
                 exit 0 ;;
             *) log ERROR "Unknown option: $1"; exit 1 ;;
@@ -718,7 +740,7 @@ main() {
     }
     validate_input "$input"
 
-    log INFO "Starting content-adaptive encoding with auto-crop and progress visualization..."
+    log INFO "Starting content-adaptive encoding with auto-crop and HDR detection..."
     run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale"
 }
 
