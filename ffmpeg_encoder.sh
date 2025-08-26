@@ -22,6 +22,10 @@ STATS_PREFIX="ffmpeg_stats_$$"
 # Base profile definitions
 declare -A BASE_PROFILES
 
+# HINT: You can add new profiles anytime and also tweak certain 
+#       parameters. HDR parameters will be added in the process, 
+#       if HDR was found in the source video.
+
 # 1080p Profiles
 BASE_PROFILES["1080p_anime"]="preset=slow:crf=20:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=4000:hdr_bitrate=5000:content_type=anime"
 BASE_PROFILES["1080p_3d_animation"]="preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=6000:hdr_bitrate=7000:content_type=3d_animation"
