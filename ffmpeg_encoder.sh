@@ -27,14 +27,14 @@ declare -A BASE_PROFILES
 #       if HDR was found in the source video.
 
 # 1080p Profiles
-BASE_PROFILES["1080p_anime"]="preset=slow:crf=20:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=4000:hdr_bitrate=5000:content_type=anime"
-BASE_PROFILES["1080p_3d_animation"]="preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=6000:hdr_bitrate=7000:content_type=3d_animation"
-BASE_PROFILES["1080p_film"]="preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=5000:hdr_bitrate=6000:content_type=film"
+BASE_PROFILES["1080p_anime"]="title=1080p Anime/2D Animation (3.5k/4.5k bitrate):preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
+BASE_PROFILES["1080p_3d_animation"]="title=1080p 3D/CGI Animation (5.5k/6.5k bitrate):preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=5500:hdr_bitrate=6500:content_type=3d_animation"
+BASE_PROFILES["1080p_film"]="title=1080p Live-Action Film (4.5k/5.5k bitrate):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
 
 # 4K Profiles
-BASE_PROFILES["4k_anime"]="preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=10000:hdr_bitrate=12000:content_type=anime"
-BASE_PROFILES["4k_3d_animation"]="preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=14000:hdr_bitrate=16000:content_type=3d_animation"
-BASE_PROFILES["4k_film"]="preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=16000:hdr_bitrate=18000:content_type=film"
+BASE_PROFILES["4k_anime"]="title=4K Anime/2D Animation (8k/10k bitrate):preset=slow:crf=23:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
+BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation (12k/14k bitrate):preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=12000:hdr_bitrate=14000:content_type=3d_animation"
+BASE_PROFILES["4k_film"]="title=4K Live-Action Film (14k/16k bitrate):preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
 
 # Progress bar functions
 show_progress() {
@@ -645,7 +645,7 @@ parse_and_adapt_profile() {
     log ANALYSIS "Adaptive parameters - Bitrate: $selected_bitrate → $adaptive_bitrate, CRF: $selected_crf → $adaptive_crf (Complexity: $complexity_score)"
     
     # Update profile with adaptive values and remove helper fields
-    local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|hdr_bitrate=[^:]*||" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
+    local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|hdr_bitrate=[^:]*||" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|title=[^:]*:||' | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
     
     # Add HDR-specific parameters if HDR content is detected
     if [[ "$is_hdr" == "true" ]]; then
@@ -825,6 +825,43 @@ run_abr_encoding() {
     rm -f "${stats}"* 2>/dev/null || true
 }
 
+# Show help function
+show_help() {
+    echo "Advanced FFmpeg Encoder with Multi-Mode Support, Auto-Crop and HDR Detection"
+    echo "Usage: $0 -i INPUT [-o OUTPUT] -p PROFILE [OPTIONS]"
+    echo ""
+    echo "Available Profiles:"
+    
+    # Sort profile names and display with titles
+    for profile in $(printf '%s\n' "${!BASE_PROFILES[@]}" | sort); do
+        local profile_data="${BASE_PROFILES[$profile]}"
+        local title=$(echo "$profile_data" | grep -o 'title=[^:]*' | cut -d= -f2)
+        printf "  %-18s %s\n" "$profile" "$title"
+    done
+    
+    echo ""
+    echo "Encoding Modes:"
+    echo "  crf    Single-pass Constant Rate Factor (Pure VBR) - Best for archival/mastering"
+    echo "  abr    Two-pass Average Bitrate (Default) - Best for streaming/delivery"
+    echo "  cbr    Two-pass Constant Bitrate - Best for broadcast/live streaming"
+    echo ""
+    echo "Options:"
+    echo "  -i, --input   Input video file"
+    echo "  -o, --output  Output video file (optional, defaults to input_UUID.ext)"  
+    echo "  -p, --profile Encoding profile (content-type based)"
+    echo "  -m, --mode    Encoding mode: crf, abr, cbr (default: abr)"
+    echo "  -t, --title   Video title metadata"
+    echo "  -c, --crop    Manual crop (format: w:h:x:y)"
+    echo "  -s, --scale   Scale resolution (format: w:h)"
+    echo "  -h, --help    Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  $0 -i input.mkv -o output.mkv -p 1080p_anime -m crf    # Single-pass CRF"
+    echo "  $0 -i input.mkv -p 4k_film -m abr                    # Two-pass ABR with UUID output"
+    echo "  $0 -i input.mkv -o output.mkv -p 1080p_film -m cbr    # Two-pass CBR"
+    echo ""
+}
+
 # Main function
 main() {
     local input="" output="" profile="" title="" crop="" scale="" mode="abr"
@@ -837,48 +874,75 @@ main() {
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -i|--input)    input="$2"; shift 2 ;;
-            -o|--output)   output="$2"; shift 2 ;;
-            -p|--profile)  profile="$2"; shift 2 ;;
-            -t|--title)    title="$2"; shift 2 ;;
-            -c|--crop)     crop="$2"; shift 2 ;;
-            -s|--scale)    scale="$2"; shift 2 ;;
-            -m|--mode)     mode="$2"; shift 2 ;;
+            -i|--input)    
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Input file not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                input="$2"; shift 2 ;;
+            -o|--output)   
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Output file not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                output="$2"; shift 2 ;;
+            -p|--profile)  
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Profile not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                profile="$2"; shift 2 ;;
+            -t|--title)    
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Title not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                title="$2"; shift 2 ;;
+            -c|--crop)     
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Crop parameters not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                crop="$2"; shift 2 ;;
+            -s|--scale)    
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Scale parameters not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                scale="$2"; shift 2 ;;
+            -m|--mode)     
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Mode not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                mode="$2"; shift 2 ;;
             -h|--help)     
-                echo "Advanced FFmpeg Encoder with Multi-Mode Support, Auto-Crop and HDR Detection"
-                echo "Usage: $0 -i INPUT [-o OUTPUT] -p PROFILE [OPTIONS]"
-                echo ""
-                echo "Available Profiles: ${!BASE_PROFILES[*]}"
-                echo ""
-                echo "Encoding Modes:"
-                echo "  crf    Single-pass Constant Rate Factor (Pure VBR) - Best for archival/mastering"
-                echo "  abr    Two-pass Average Bitrate (Default) - Best for streaming/delivery"
-                echo "  cbr    Two-pass Constant Bitrate - Best for broadcast/live streaming"
-                echo ""
-                echo "Options:"
-                echo "  -i, --input   Input video file"
-                echo "  -o, --output  Output video file (optional, defaults to input_UUID.ext)"  
-                echo "  -p, --profile Encoding profile (content-type based)"
-                echo "  -m, --mode    Encoding mode: crf, abr, cbr (default: abr)"
-                echo "  -t, --title   Video title metadata"
-                echo "  -c, --crop    Manual crop (format: w:h:x:y)"
-                echo "  -s, --scale   Scale resolution (format: w:h)"
-                echo "  -h, --help    Show this help"
-                echo ""
-                echo "Examples:"
-                echo "  $0 -i input.mkv -o output.mkv -p 1080p_anime -m crf    # Single-pass CRF"
-                echo "  $0 -i input.mkv -p 4k_film -m abr                    # Two-pass ABR with UUID output"
-                echo "  $0 -i input.mkv -o output.mkv -p 1080p_film -m cbr    # Two-pass CBR"
-                echo ""
+                show_help
                 exit 0 ;;
-            *) log ERROR "Unknown option: $1"; exit 1 ;;
+            -*) 
+                log ERROR "Unknown option: $1"
+                show_help
+                exit 1 ;;
+            *) 
+                log ERROR "Invalid argument: $1"
+                show_help
+                exit 1 ;;
         esac
     done
 
     # Generate UUID-based output filename if not provided
     if [[ -z $output ]]; then
         if [[ -z $input ]]; then
-            log ERROR "Input file (-i) is required"; exit 1
+            log ERROR "Input file (-i) is required"
+            show_help
+            exit 1
         fi
         local basename="$(basename "$input")"
         local name="${basename%.*}"
@@ -889,14 +953,26 @@ main() {
         log INFO "Generated output filename: $(basename "$output")"
     fi
     
-    [[ -n $input && -n $profile ]] || { 
-        log ERROR "Missing required arguments: -i INPUT -p PROFILE"; exit 1; 
-    }
+    if [[ -z $input || -z $profile ]]; then
+        log ERROR "Missing required arguments: -i INPUT -p PROFILE"
+        show_help
+        exit 1
+    fi
+    
+    # Validate profile parameter
+    if [[ -z "${BASE_PROFILES[$profile]:-}" ]]; then
+        log ERROR "Unknown profile: $profile"
+        show_help
+        exit 1
+    fi
     
     # Validate mode parameter
     case $mode in
         "crf"|"abr"|"cbr") ;; # Valid modes
-        *) log ERROR "Invalid mode: $mode. Use: crf, abr, or cbr"; exit 1 ;;
+        *) 
+            log ERROR "Invalid mode: $mode. Use: crf, abr, or cbr"
+            show_help
+            exit 1 ;;
     esac
     
     validate_input "$input"
