@@ -27,14 +27,14 @@ declare -A BASE_PROFILES
 #       if HDR was found in the source video.
 
 # 1080p Profiles
-BASE_PROFILES["1080p_anime"]="title=1080p Anime/2D Animation (3.5k/4.5k bitrate):preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
-BASE_PROFILES["1080p_3d_animation"]="title=1080p 3D/CGI Animation (5.5k/6.5k bitrate):preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=5500:hdr_bitrate=6500:content_type=3d_animation"
-BASE_PROFILES["1080p_film"]="title=1080p Live-Action Film (4.5k/5.5k bitrate):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
+BASE_PROFILES["1080p_anime"]="title=1080p Anime/2D Animation (3.5k/4.5k bitrate):preset=slow:crf=21:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
+BASE_PROFILES["1080p_3d_animation"]="title=1080p 3D/CGI Animation (5.5k/6.5k bitrate):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=5500:hdr_bitrate=6500:content_type=3d_animation"
+BASE_PROFILES["1080p_film"]="title=1080p Live-Action Film (4.5k/5.5k bitrate):preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
 
 # 4K Profiles
-BASE_PROFILES["4k_anime"]="title=4K Anime/2D Animation (8k/10k bitrate):preset=slow:crf=23:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
-BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation (12k/14k bitrate):preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=12000:hdr_bitrate=14000:content_type=3d_animation"
-BASE_PROFILES["4k_film"]="title=4K Live-Action Film (14k/16k bitrate):preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
+BASE_PROFILES["4k_anime"]="title=4K Anime/2D Animation (8k/10k bitrate):preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
+BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation (12k/14k bitrate):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=12000:hdr_bitrate=14000:content_type=3d_animation"
+BASE_PROFILES["4k_film"]="title=4K Live-Action Film (14k/16k bitrate):preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
 
 # Progress bar functions
 show_progress() {
@@ -182,11 +182,30 @@ get_video_duration() {
     echo "$duration"
 }
 
+# Global variables for log file
+LOG_FILE=""
+
+# Initialize log file function
+init_log_file() {
+    local output_file=$1
+    local log_dir="$(dirname "$output_file")"
+    local log_basename="$(basename "$output_file")"
+    local log_name="${log_basename%.*}.log"
+    LOG_FILE="${log_dir}/${log_name}"
+    
+    # Create/clear the log file
+    > "$LOG_FILE"
+    
+    log INFO "Log file initialized: $LOG_FILE"
+}
+
 # Logging function
 log() {
     local level=$1; shift
     local msg=$*
     local ts=$(date '+%Y-%m-%d %H:%M:%S')
+    local log_line="[${level}] ${ts} - ${msg}"
+    
     case $level in
         INFO)  echo -e "${GREEN}[INFO]${NC} ${ts} - ${msg}" >&2 ;;
         WARN)  echo -e "${YELLOW}[WARN ]${NC} ${ts} - ${msg}" >&2 ;;
@@ -195,6 +214,11 @@ log() {
         ANALYSIS) echo -e "${PURPLE}[ANALYSIS]${NC} ${ts} - ${msg}" >&2 ;;
         CROP) echo -e "${CYAN}[CROP]${NC} ${ts} - ${msg}" >&2 ;;
     esac
+    
+    # Write to log file if it's set
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "$log_line" >> "$LOG_FILE"
+    fi
 }
 
 # Input file validation
@@ -525,7 +549,7 @@ calculate_adaptive_crf() {
     local content_type=$3
     
     # Validate inputs
-    [[ "$base_crf" =~ ^[0-9.]+$ ]] || base_crf="22"
+    [[ "$base_crf" =~ ^[0-9.]+$ ]] || base_crf="20"
     [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
     
     # Content-type specific CRF modifiers (professional encoding practices)
@@ -634,10 +658,6 @@ parse_and_adapt_profile() {
         log ANALYSIS "HDR content detected - using HDR optimized parameters"
     fi
     
-    # Perform complexity analysis
-    log ANALYSIS "Starting content analysis for adaptive parameter optimization..."
-    local complexity_score=$(perform_complexity_analysis "$input_file")
-    
     # Calculate adaptive parameters
     local adaptive_bitrate=$(calculate_adaptive_bitrate "$selected_bitrate" "$complexity_score" "$content_type")
     local adaptive_crf=$(calculate_adaptive_crf "$selected_crf" "$complexity_score" "$content_type")
@@ -656,10 +676,61 @@ parse_and_adapt_profile() {
     echo "$adapted_profile"
 }
 
+# Log profile and encoding details
+log_profile_details() {
+    local profile_name=$1
+    local mode=$2
+    local adapted_profile=$3
+    local complexity_score=$4
+    local input_file=$5
+    local output_file=$6
+    
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "" >> "$LOG_FILE"
+        echo "=== ENCODING SESSION DETAILS ===" >> "$LOG_FILE"
+        echo "Date: $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
+        echo "Input File: $input_file" >> "$LOG_FILE"
+        echo "Output File: $output_file" >> "$LOG_FILE"
+        echo "Profile: $profile_name" >> "$LOG_FILE"
+        echo "Encoding Mode: $mode" >> "$LOG_FILE"
+        echo "Complexity Score: $complexity_score" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+        
+        # Extract and log profile details
+        local profile_title=$(echo "${BASE_PROFILES[$profile_name]}" | grep -o 'title=[^:]*' | cut -d= -f2)
+        local content_type=$(echo "${BASE_PROFILES[$profile_name]}" | grep -o 'content_type=[^:]*' | cut -d= -f2)
+        
+        echo "=== PROFILE INFORMATION ===" >> "$LOG_FILE"
+        echo "Profile Title: $profile_title" >> "$LOG_FILE"
+        echo "Content Type: $content_type" >> "$LOG_FILE"
+        echo "Base Profile String: ${BASE_PROFILES[$profile_name]}" >> "$LOG_FILE"
+        echo "Adapted Profile String: $adapted_profile" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+        
+        # Extract specific encoding parameters
+        local bitrate=$(echo "$adapted_profile" | grep -o 'bitrate=[^:]*' | cut -d= -f2)
+        local crf=$(echo "$adapted_profile" | grep -o 'crf=[^:]*' | cut -d= -f2)
+        local preset=$(echo "$adapted_profile" | grep -o 'preset=[^:]*' | cut -d= -f2)
+        local pix_fmt=$(echo "$adapted_profile" | grep -o 'pix_fmt=[^:]*' | cut -d= -f2)
+        local profile_codec=$(echo "$adapted_profile" | grep -o 'profile=[^:]*' | cut -d= -f2)
+        
+        echo "=== ENCODING PARAMETERS ===" >> "$LOG_FILE"
+        echo "Bitrate: $bitrate" >> "$LOG_FILE"
+        echo "CRF: $crf" >> "$LOG_FILE"
+        echo "Preset: $preset" >> "$LOG_FILE"
+        echo "Pixel Format: $pix_fmt" >> "$LOG_FILE"
+        echo "Codec Profile: $profile_codec" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
+}
+
 # Enhanced encoding with mode support (ABR/CRF/CBR)
 run_encoding() {
     local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6 mode=$7
 
+    # Initialize log file
+    init_log_file "$out"
+    
     log INFO "Profile: $prof"
     
     # Video duration for progress
@@ -672,7 +743,14 @@ run_encoding() {
         log INFO "Crop detection completed."
     fi
     
+    # Get complexity score and adapted profile
+    log ANALYSIS "Starting content analysis for adaptive parameter optimization..."
+    local complexity_score=$(perform_complexity_analysis "$in")
     local ps=$(parse_and_adapt_profile "$prof" "$in")
+    
+    # Log profile details to file
+    log_profile_details "$prof" "$mode" "$ps" "$complexity_score" "$in" "$out"
+    
     local bitrate=$(echo "$ps" | grep -o 'bitrate=[^:]*' | cut -d= -f2)
     local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
     local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
@@ -704,6 +782,18 @@ run_encoding() {
     local compression_ratio=$(echo "scale=1; $(du -k "$in" | cut -f1) / $(du -k "$out" | cut -f1)" | bc -l 2>/dev/null || echo "N/A")
     log INFO "Compression: $input_size → $output_size (Ratio: ${compression_ratio}:1)"
     log INFO "Encoding completed successfully!"
+    
+    # Log final statistics to file
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== ENCODING RESULTS ===" >> "$LOG_FILE"
+        echo "Input Size: $input_size" >> "$LOG_FILE"
+        echo "Output Size: $output_size" >> "$LOG_FILE"
+        echo "Compression Ratio: ${compression_ratio}:1" >> "$LOG_FILE"
+        echo "Encoding Status: SUCCESS" >> "$LOG_FILE"
+        echo "Completion Time: $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+        echo "=== LOG END ===" >> "$LOG_FILE"
+    fi
 }
 
 # Single-pass CRF encoding (Pure VBR)
@@ -719,6 +809,20 @@ run_crf_encoding() {
     
     log INFO "Starting single-pass CRF encoding (Pure VBR)..."
     
+    # Log encoding pass details
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== CRF ENCODING PASS ===" >> "$LOG_FILE"
+        echo "Pass Type: Single-pass CRF (Pure VBR)" >> "$LOG_FILE"
+        echo "CRF Value: $crf" >> "$LOG_FILE"
+        echo "Preset: $preset" >> "$LOG_FILE"
+        echo "Pixel Format: $pix_fmt" >> "$LOG_FILE"
+        echo "Codec Profile: $profile_codec" >> "$LOG_FILE"
+        echo "x265 Parameters: $x265p" >> "$LOG_FILE"
+        echo "Filter Chain: $fc" >> "$LOG_FILE"
+        echo "Stream Mapping: $streams" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
+    
     # Single-pass CRF command (remove bitrate completely)
     local cmd=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd+=(-metadata title="$title")
@@ -729,6 +833,12 @@ run_crf_encoding() {
     local clean_x265p=$(echo "$x265p" | sed 's|bitrate=[^:]*:||g;s|:bitrate=[^:]*||g;s|^bitrate=[^:]*$||g')
     [[ -n "$clean_x265p" ]] && cmd+=(-x265-params "$clean_x265p")
     cmd+=($streams -default_mode infer_no_subs -loglevel warning "$out")
+    
+    # Log the full command
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "Command: ${cmd[*]}" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
     
     run_ffmpeg_with_progress "CRF Encoding (Single Pass)" "$input_duration" "${cmd[@]}" || { 
         log ERROR "CRF encoding failed"; exit 1; 
@@ -753,6 +863,22 @@ run_cbr_encoding() {
     
     log INFO "Starting two-pass CBR encoding (Constant Bitrate)..."
     log INFO "CBR Parameters - Rate: $bitrate, Buffer: $bufsize"
+    
+    # Log CBR encoding details
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== CBR ENCODING PASSES ===" >> "$LOG_FILE"
+        echo "Pass Type: Two-pass CBR (Constant Bitrate)" >> "$LOG_FILE"
+        echo "Target Bitrate: $bitrate" >> "$LOG_FILE"
+        echo "Min Rate: $minrate" >> "$LOG_FILE"
+        echo "Max Rate: $maxrate" >> "$LOG_FILE"
+        echo "Buffer Size: $bufsize" >> "$LOG_FILE"
+        echo "Preset: $preset" >> "$LOG_FILE"
+        echo "Pixel Format: $pix_fmt" >> "$LOG_FILE"
+        echo "Codec Profile: $profile_codec" >> "$LOG_FILE"
+        echo "x265 Parameters: $x265p" >> "$LOG_FILE"
+        echo "Stats File: $stats" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
 
     # First pass with progress
     local cmd1=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
@@ -762,6 +888,13 @@ run_cbr_encoding() {
     cmd1+=(-x265-params "$x265p:pass=1:no-slow-firstpass=1:stats=$stats")
     cmd1+=(-b:v "$bitrate" -minrate "$minrate" -maxrate "$maxrate" -bufsize "$bufsize")
     cmd1+=(-preset:v slow -an -sn -dn -f mp4 -loglevel warning /dev/null)
+    
+    # Log first pass command
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== CBR FIRST PASS ===" >> "$LOG_FILE"
+        echo "Command: ${cmd1[*]}" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
     
     run_ffmpeg_with_progress "CBR First Pass (Analysis)" "$input_duration" "${cmd1[@]}" || { 
         log ERROR "CBR first pass failed"; exit 1; 
@@ -776,6 +909,13 @@ run_cbr_encoding() {
     cmd2+=(-b:v "$bitrate" -minrate "$minrate" -maxrate "$maxrate" -bufsize "$bufsize")
     cmd2+=(-preset:v "$preset")
     cmd2+=($streams -default_mode infer_no_subs -loglevel warning "$out")
+    
+    # Log second pass command
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== CBR SECOND PASS ===" >> "$LOG_FILE"
+        echo "Command: ${cmd2[*]}" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
     
     run_ffmpeg_with_progress "CBR Second Pass (Final Encoding)" "$input_duration" "${cmd2[@]}" || { 
         log ERROR "CBR second pass failed"; exit 1; 
@@ -796,6 +936,19 @@ run_abr_encoding() {
     local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
     
     log INFO "Starting two-pass ABR encoding (Average Bitrate)..."
+    
+    # Log ABR encoding details
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== ABR ENCODING PASSES ===" >> "$LOG_FILE"
+        echo "Pass Type: Two-pass ABR (Average Bitrate)" >> "$LOG_FILE"
+        echo "Target Bitrate: $bitrate" >> "$LOG_FILE"
+        echo "Preset: $preset" >> "$LOG_FILE"
+        echo "Pixel Format: $pix_fmt" >> "$LOG_FILE"
+        echo "Codec Profile: $profile_codec" >> "$LOG_FILE"
+        echo "x265 Parameters: $x265p" >> "$LOG_FILE"
+        echo "Stats File: $stats" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
 
     local cmd1=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd1+=(-metadata title="$title")
@@ -803,6 +956,13 @@ run_abr_encoding() {
     cmd1+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
     cmd1+=(-x265-params "$x265p:pass=1:no-slow-firstpass=1:stats=$stats")
     cmd1+=(-b:v "$bitrate" -preset:v slow -an -sn -dn -f mp4 -loglevel warning /dev/null)
+    
+    # Log first pass command
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== ABR FIRST PASS ===" >> "$LOG_FILE"
+        echo "Command: ${cmd1[*]}" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
     
     run_ffmpeg_with_progress "ABR First Pass (Analysis)" "$input_duration" "${cmd1[@]}" || { 
         log ERROR "ABR first pass failed"; exit 1; 
@@ -816,6 +976,13 @@ run_abr_encoding() {
     cmd2+=(-x265-params "$x265p:pass=2:stats=$stats")
     cmd2+=(-b:v "$bitrate" -preset:v "$preset")
     cmd2+=($streams -default_mode infer_no_subs -loglevel warning "$out")
+    
+    # Log second pass command
+    if [[ -n "$LOG_FILE" ]]; then
+        echo "=== ABR SECOND PASS ===" >> "$LOG_FILE"
+        echo "Command: ${cmd2[*]}" >> "$LOG_FILE"
+        echo "" >> "$LOG_FILE"
+    fi
     
     run_ffmpeg_with_progress "ABR Second Pass (Final Encoding)" "$input_duration" "${cmd2[@]}" || { 
         log ERROR "ABR second pass failed"; exit 1; 
