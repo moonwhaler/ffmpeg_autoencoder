@@ -135,40 +135,59 @@ run_ffmpeg_with_progress() {
     local ffmpeg_cmd=("${cmd[@]}")
     ffmpeg_cmd+=(-progress "$progress_file")
     
-    # Start FFmpeg in background
-    "${ffmpeg_cmd[@]}" &
+    # Temporary file for capturing stderr output
+    local stderr_file="${TEMP_DIR}/ffmpeg_stderr_$$.txt"
+    
+    # Start FFmpeg in background with stderr captured to avoid progress bar interference
+    "${ffmpeg_cmd[@]}" 2>"$stderr_file" &
     local pid=$!
     
     # Monitor progress
     local current_time=0
+    local last_progress_update=0
     while kill -0 "$pid" 2>/dev/null; do
         if [[ -f "$progress_file" ]]; then
-            # Read current progress from progress file
-            local out_time=$(tail -n 20 "$progress_file" 2>/dev/null | \
-                grep "out_time_ms=" | tail -1 | cut -d= -f2 || echo "0")
+            # Read current progress from progress file - more robust parsing
+            local out_time=$(grep "out_time_ms=" "$progress_file" 2>/dev/null | tail -1 | cut -d= -f2 || echo "0")
             
             if [[ "$out_time" =~ ^[0-9]+$ ]] && [[ $out_time -gt 0 ]]; then
                 current_time=$((out_time / 1000000)) # Microseconds to seconds
                 
-                if [[ $input_duration -gt 0 && $current_time -le $input_duration ]]; then
-                    show_progress "$current_time" "$input_duration" "$description"
+                # Update progress bar more frequently and always show valid progress
+                if [[ $input_duration -gt 0 ]]; then
+                    # Clamp current_time to not exceed input_duration
+                    if [[ $current_time -gt $input_duration ]]; then
+                        current_time=$input_duration
+                    fi
+                    
+                    # Only update display if we have meaningful progress change
+                    if [[ $current_time -gt $last_progress_update ]]; then
+                        show_progress "$current_time" "$input_duration" "$description"
+                        last_progress_update=$current_time
+                    fi
                 fi
             fi
         fi
-        sleep 0.5
+        sleep 0.2  # More frequent updates for better responsiveness
     done
     
     wait "$pid"
     local exit_code=$?
-    
-    # Cleanup
-    rm -f "$progress_file" 2>/dev/null || true
     
     # Show 100% on success
     if [[ $exit_code -eq 0 && $input_duration -gt 0 ]]; then
         show_progress "$input_duration" "$input_duration" "$description"
     fi
     printf "\n"
+    
+    # If there was an error, display the captured stderr for debugging
+    if [[ $exit_code -ne 0 && -f "$stderr_file" ]]; then
+        log ERROR "FFmpeg failed with exit code $exit_code. Error output:"
+        cat "$stderr_file" >&2
+    fi
+    
+    # Cleanup temporary files
+    rm -f "$progress_file" "$stderr_file" 2>/dev/null || true
     
     return $exit_code
 }
