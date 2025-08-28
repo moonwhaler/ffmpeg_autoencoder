@@ -27,14 +27,19 @@ declare -A BASE_PROFILES
 #       if HDR was found in the source video.
 
 # 1080p Profiles
-BASE_PROFILES["1080p_anime"]="title=1080p Anime/2D Animation (3.5k/4.5k bitrate):preset=slow:crf=21:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
-BASE_PROFILES["1080p_3d_animation"]="title=1080p 3D/CGI Animation (5.5k/6.5k bitrate):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=5:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=5500:hdr_bitrate=6500:content_type=3d_animation"
-BASE_PROFILES["1080p_film"]="title=1080p Live-Action Film (4.5k/5.5k bitrate):preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=5:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
+BASE_PROFILES["1080p_anime"]="title=1080p Anime/2D Animation:preset=slow:crf=21:tune=animation:pix_fmt=yuv420p10le:profile=main10:limit-sao:bframes=8:ref=6:psy-rd=1:psy-rdoq=1:aq-mode=3:aq-strength=0.8:deblock=1,1:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.8:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
+BASE_PROFILES["1080p_classic_anime"]="title=1080p older Anime/2D Animation:preset=slow:crf=20:tune=animation:pix_fmt=yuv420p10le:profile=main10:limit-sao:bframes=8:ref=6:psy-rd=1.5:psy-rdoq=2:aq-mode=3:aq-strength=0.8:deblock=1,1:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.8:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
+BASE_PROFILES["1080p_3d_animation"]="title=1080p 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.6:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.0:no-sao:selective-sao=0:rskip=2:rskip-edge-threshold=2:deblock=-1:-1:ctu=32:rd=4:rdoq-level=2:qcomp=0.65:no-strong-intra-smoothing:base_bitrate=5500:hdr_bitrate=6500:content_type=3d_animation"
+BASE_PROFILES["1080p_film"]="title=1080p Live-Action Film:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=5:psy-rd=1.5:psy-rdoq=2.5:rskip=1:rskip-edge-threshold=2:deblock=-2:-2:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
+BASE_PROFILES["1080p_heavygrain_film"]="title=1080p Live-Action Film (with grain):preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=1:aq-strength=1.2:bframes=8:b-adapt=2:ref=5:psy-rd=2.5:psy-rdoq=5.0:rskip=0:deblock=-2:-2:ctu=32:rd=5:rdoq-level=2:qcomp=0.8:ipratio=1.1:pbratio=1.0:qpstep=1:no-cutree:tune=grain:rect:amp:no-strong-intra-smoothing:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
 
 # 4K Profiles
-BASE_PROFILES["4k_anime"]="title=4K Anime/2D Animation (8k/10k bitrate):preset=slow:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2:deblock=1,1:limit-sao=1:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
-BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation (12k/14k bitrate):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=3:aq-strength=0.8:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.8:strong-intra-smoothing=1:base_bitrate=12000:hdr_bitrate=14000:content_type=3d_animation"
-BASE_PROFILES["4k_film"]="title=4K Live-Action Film (14k/16k bitrate):preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=80:aq-mode=1:aq-strength=1.0:bframes=6:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=1.0:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
+BASE_PROFILES["4k_anime"]="title=4K modern Anime/2D Animation:preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:no-sao:no-strong-intra-smoothing:bframes=10:ref=8:psy-rd=1.5:psy-rdoq=2.5:aq-mode=3:aq-strength=0.8:deblock=-1:-1:rc-lookahead=80:ctu=32:rd=4:rdoq-level=2:qcomp=0.7:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
+BASE_PROFILES["4k_classic_anime"]="title=4K Anime/2D older Animation:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:limit-sao:bframes=8:ref=8:psy-rd=1.0:psy-rdoq=2.0:aq-mode=3:aq-strength=0.8:deblock=0,0:no-strong-intra-smoothing:rc-lookahead=60:ctu=64:rd=4:rdoq-level=2:qcomp=0.8:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
+BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.6:bframes=6:b-adapt=2:ref=8:psy-rd=0.4:psy-rdoq=0.4:sao:deblock=-1:-1:rskip=2:rskip-edge-threshold=1:ctu=64:rd=4:rdoq-level=2:qcomp=0.65:base_bitrate=12000:hdr_bitrate=14000:content_type=3d_animation"
+BASE_PROFILES["4k_film"]="title=4K Live-Action modern Film:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=2:aq-strength=0.8:bframes=6:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2.5:rskip=1:rskip-edge-threshold=2:deblock=-1:-1:ctu=64:rd=4:rdoq-level=2:qcomp=0.7:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
+BASE_PROFILES["4k_heavygrain_film"]="title=4K Live-Action Film:preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=3:aq-strength=1.0:bframes=5:b-adapt=2:ref=5:psy-rd=3.0:psy-rdoq=6.0:rskip=0:deblock=-1:-1:ctu=32:rd=5:rdoq-level=2:qcomp=0.8:ipratio=1.1:pbratio=1.0:qpstep=1:no-cutree:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
+BASE_PROFILES["4k_arcane_test"]="title=Arcane Test Profile:preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:bframes=5:ref=6:psy-rd=3.0:psy-rdoq=6.0:aq-mode=2:aq-strength=0.7:deblock=-1:-1:rskip=2:rskip-edge-threshold=0.8:ctu=64:rd=4:rdoq-level=2:qcomp=0.7:base_bitrate=14000:hdr_bitrate=16000:content_type=3d_animation"
 
 # Progress bar functions
 show_progress() {
@@ -281,17 +286,17 @@ detect_crop_values() {
     
     # Sample 1 with progress - adaptive detection for black bars
     local cmd1="ffmpeg -loglevel info -ss $start_time -i '$input' -t 30 -vsync vfr -vf 'fps=1/4,cropdetect=limit=$crop_limit:round=2:reset=1' -f null - 2>&1 | grep -o 'crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*' >> '$temp_crop_log' || true"
-    run_with_progress "Crop Analysis (Start)" 30 \
+    run_with_progress "Crop Analysis (Start)" 0 \
         bash -c "$cmd1" >&2
     
     # Sample 2 with progress
     local cmd2="ffmpeg -loglevel info -ss $mid_time -i '$input' -t 30 -vsync vfr -vf 'fps=1/4,cropdetect=limit=$crop_limit:round=2:reset=1' -f null - 2>&1 | grep -o 'crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*' >> '$temp_crop_log' || true"
-    run_with_progress "Crop Analysis (Middle)" 30 \
+    run_with_progress "Crop Analysis (Middle)" 0 \
         bash -c "$cmd2" >&2
     
     # Sample 3 with progress
     local cmd3="ffmpeg -loglevel info -ss $end_time -i '$input' -t 30 -vsync vfr -vf 'fps=1/4,cropdetect=limit=$crop_limit:round=2:reset=1' -f null - 2>&1 | grep -o 'crop=[0-9]*:[0-9]*:[0-9]*:[0-9]*' >> '$temp_crop_log' || true"
-    run_with_progress "Crop Analysis (End)" 30 \
+    run_with_progress "Crop Analysis (End)" 0 \
         bash -c "$cmd3" >&2
     
     # Determine most common crop value
