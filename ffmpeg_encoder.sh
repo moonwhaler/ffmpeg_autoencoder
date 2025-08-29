@@ -546,8 +546,11 @@ calculate_adaptive_bitrate() {
     local complexity_score=$2
     local content_type=$3
     
-    # Validate inputs
-    [[ "$base_bitrate" =~ ^[0-9]+$ ]] || base_bitrate="16000"
+    # Validate inputs - if base_bitrate is invalid, return it as-is
+    if ! [[ "$base_bitrate" =~ ^[0-9]+k?$ ]]; then
+        echo "$base_bitrate"  # Return original if invalid
+        return
+    fi
     [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
     
     local base_value=$(echo "$base_bitrate" | sed 's/k$//')
@@ -576,8 +579,11 @@ calculate_adaptive_crf() {
     local complexity_score=$2
     local content_type=$3
     
-    # Validate inputs
-    [[ "$base_crf" =~ ^[0-9.]+$ ]] || base_crf="20"
+    # Validate inputs - if base_crf is invalid, return it as-is
+    if ! [[ "$base_crf" =~ ^[0-9.]+$ ]]; then
+        echo "$base_crf"  # Return original if invalid
+        return
+    fi
     [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
     
     # Content-type specific CRF modifiers (professional encoding practices)
@@ -665,6 +671,7 @@ build_stream_mapping() {
 parse_and_adapt_profile() {
     local profile_name=$1
     local input_file=$2
+    local complexity_score=$3  # Add complexity_score as parameter
     local str=${BASE_PROFILES[$profile_name]:-}
     [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; exit 1; }
     
@@ -774,7 +781,7 @@ run_encoding() {
     # Get complexity score and adapted profile
     log ANALYSIS "Starting content analysis for adaptive parameter optimization..."
     local complexity_score=$(perform_complexity_analysis "$in")
-    local ps=$(parse_and_adapt_profile "$prof" "$in")
+    local ps=$(parse_and_adapt_profile "$prof" "$in" "$complexity_score")
     
     # Log profile details to file
     log_profile_details "$prof" "$mode" "$ps" "$complexity_score" "$in" "$out"
