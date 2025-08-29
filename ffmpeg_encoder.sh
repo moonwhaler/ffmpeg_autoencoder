@@ -39,7 +39,7 @@ BASE_PROFILES["4k_classic_anime"]="title=4K Anime/2D older Animation:preset=slow
 BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.6:bframes=6:b-adapt=2:ref=8:psy-rd=0.4:psy-rdoq=0.4:sao:deblock=-1:-1:rskip=2:rskip-edge-threshold=1:ctu=64:rd=4:rdoq-level=2:qcomp=0.65:base_bitrate=12000:hdr_bitrate=14000:content_type=3d_animation"
 BASE_PROFILES["4k_film"]="title=4K Live-Action modern Film:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=2:aq-strength=0.8:bframes=6:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2.5:rskip=1:rskip-edge-threshold=2:deblock=-1:-1:ctu=64:rd=4:rdoq-level=2:qcomp=0.7:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
 BASE_PROFILES["4k_heavygrain_film"]="title=4K Live-Action Film:preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=3:aq-strength=1.0:bframes=5:b-adapt=2:ref=5:psy-rd=3.0:psy-rdoq=6.0:rskip=0:deblock=-1:-1:ctu=32:rd=5:rdoq-level=2:qcomp=0.8:ipratio=1.1:pbratio=1.0:qpstep=1:no-cutree:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
-BASE_PROFILES["4k_arcane_test"]="title=Arcane Test Profile:preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:bframes=5:ref=6:psy-rd=3.0:psy-rdoq=6.0:aq-mode=2:aq-strength=0.7:deblock=-1:-1:rskip=2:rskip-edge-threshold=0.8:ctu=64:rd=4:rdoq-level=2:qcomp=0.7:base_bitrate=14000:hdr_bitrate=16000:content_type=3d_animation"
+BASE_PROFILES["4k_arcane_test"]="title=Arcane Test Profile:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:limit-sao:bframes=5:ref=6:psy-rd=2.5:psy-rdoq=4.0:aq-mode=3:aq-strength=0.8:deblock=-1:-1:rskip=2:rskip-edge-threshold=0.2:ctu=32:rd=4:rdoq-level=2:qcomp=0.7:nr-intra=50:nr-inter=150:no-strong-intra-smoothing:me=star:merange=32:base_bitrate=18000:hdr_bitrate=20000:content_type=3d_animation"
 
 # Progress bar functions
 show_progress() {
@@ -148,27 +148,31 @@ run_ffmpeg_with_progress() {
     local pid=$!
     
     # Monitor progress
-    local current_time=0
-    local last_progress_update=0
+    local current_time_us=0
+    local last_progress_us=0
+    local input_duration_us=$((input_duration * 1000000))  # Convert to microseconds
+    
     while kill -0 "$pid" 2>/dev/null; do
         if [[ -f "$progress_file" ]]; then
             # Read current progress from progress file - more robust parsing
-            local out_time=$(grep "out_time_ms=" "$progress_file" 2>/dev/null | tail -1 | cut -d= -f2 || echo "0")
+            local out_time_us=$(grep "out_time_ms=" "$progress_file" 2>/dev/null | tail -1 | cut -d= -f2 || echo "0")
             
-            if [[ "$out_time" =~ ^[0-9]+$ ]] && [[ $out_time -gt 0 ]]; then
-                current_time=$((out_time / 1000000)) # Microseconds to seconds
+            if [[ "$out_time_us" =~ ^[0-9]+$ ]] && [[ $out_time_us -gt 0 ]]; then
+                current_time_us=$out_time_us
                 
                 # Update progress bar more frequently and always show valid progress
-                if [[ $input_duration -gt 0 ]]; then
-                    # Clamp current_time to not exceed input_duration
-                    if [[ $current_time -gt $input_duration ]]; then
-                        current_time=$input_duration
+                if [[ $input_duration_us -gt 0 ]]; then
+                    # Clamp current_time_us to not exceed input_duration_us
+                    if [[ $current_time_us -gt $input_duration_us ]]; then
+                        current_time_us=$input_duration_us
                     fi
                     
-                    # Only update display if we have meaningful progress change
-                    if [[ $current_time -gt $last_progress_update ]]; then
-                        show_progress "$current_time" "$input_duration" "$description"
-                        last_progress_update=$current_time
+                    # Update display if we have any progress change (using microseconds for smooth updates)
+                    if [[ $current_time_us -gt $last_progress_us ]]; then
+                        # Convert back to seconds for display
+                        local current_seconds=$((current_time_us / 1000000))
+                        show_progress "$current_seconds" "$input_duration" "$description"
+                        last_progress_us=$current_time_us
                     fi
                 fi
             fi
