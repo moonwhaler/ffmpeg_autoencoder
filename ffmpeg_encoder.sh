@@ -933,6 +933,24 @@ build_stream_mapping() {
     echo "$map"
 }
 
+# Parse base profile without complexity adaptation
+parse_base_profile() {
+    local profile_name=$1
+    local str=${BASE_PROFILES[$profile_name]:-}
+    [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; exit 1; }
+    
+    # Extract base values from profile
+    local base_bitrate=$(echo "$str" | grep -o 'base_bitrate=[^:]*' | cut -d= -f2)
+    local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | cut -d= -f2)
+    
+    # Build final profile string with base parameters (remove metadata fields)
+    local final_profile=$(echo "$str" | sed -E 's/(base_bitrate|hdr_bitrate|content_type)=[^:]*:?//g')
+    final_profile=$(echo "$final_profile" | sed 's/::/:/g' | sed 's/:$//g')
+    
+    # Add bitrate and crf to final profile
+    echo "${final_profile}:bitrate=${base_bitrate}:crf=${base_crf}"
+}
+
 # Parse profile and adapt through complexity analysis
 parse_and_adapt_profile() {
     local profile_name=$1
@@ -1040,7 +1058,7 @@ log_profile_details() {
 
 # Enhanced encoding with mode support (ABR/CRF/CBR)
 run_encoding() {
-    local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6 mode=$7
+    local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6 mode=$7 use_complexity=$8
 
     # Initialize log file
     init_log_file "$out"
@@ -1057,10 +1075,19 @@ run_encoding() {
         log INFO "Crop detection completed."
     fi
     
-    # Get complexity score and adapted profile
-    log ANALYSIS "Starting content analysis for adaptive parameter optimization..."
-    local complexity_score=$(perform_complexity_analysis "$in")
-    local ps=$(parse_and_adapt_profile "$prof" "$in" "$complexity_score")
+    # Get complexity score and adapted profile based on parameter
+    local complexity_score="50"  # Default neutral complexity
+    local ps=""
+    
+    if [[ "$use_complexity" == "true" ]]; then
+        log ANALYSIS "Starting content analysis for adaptive parameter optimization..."
+        complexity_score=$(perform_complexity_analysis "$in")
+        ps=$(parse_and_adapt_profile "$prof" "$in" "$complexity_score")
+    else
+        # Use base profile without complexity analysis
+        log INFO "Using base profile without complexity analysis"
+        ps=$(parse_base_profile "$prof")
+    fi
     
     # Log profile details to file
     log_profile_details "$prof" "$mode" "$ps" "$complexity_score" "$in" "$out"
@@ -1345,21 +1372,26 @@ show_help() {
     echo "  -t, --title   Video title metadata"
     echo "  -c, --crop       Manual crop (format: w:h:x:y)"
     echo "  -s, --scale      Scale resolution (format: w:h)"
+    echo "  --use-complexity Enable complexity analysis for adaptive parameter optimization"
     echo "  --web-search     Enable web search for content validation (default: enabled)"
     echo "  --web-search-force  Force web search even with high technical confidence"
     echo "  --no-web-search  Disable web search validation"
     echo "  -h, --help       Show this help"
     echo ""
-    echo "🤖 AUTOMATIC PROFILE SELECTION:"
-    echo "  Use -p auto to enable intelligent profile selection based on content analysis."
+    echo "🔬 COMPLEXITY ANALYSIS:"
+    echo "  By default, profiles use their base parameters without modification."
+    echo "  Use --use-complexity to enable adaptive parameter optimization."
     echo ""
-    echo "  The system analyzes:"
+    echo "  When enabled, the system analyzes:"
     echo "    • Content type (anime, 3D animation, live-action film)"
     echo "    • Grain characteristics (heavy, light, clean digital)"
     echo "    • Motion complexity (action, standard, low-motion)"
     echo "    • Visual complexity and edge density"
     echo "    • HDR detection and resolution"
-    echo "    • Web search validation for enhanced accuracy (default: enabled)"
+    echo ""
+    echo "🤖 AUTOMATIC PROFILE SELECTION:"
+    echo "  Use -p auto to enable intelligent profile selection based on content analysis."
+    echo "  Note: Auto selection always uses complexity analysis regardless of --use-complexity flag."
     echo ""
     echo "📚 MANUAL PROFILE SELECTION:"
     echo "  Content Type Recommendations:"
@@ -1390,7 +1422,7 @@ show_help() {
 
 # Main function
 main() {
-    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true"
+    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false"
 
     # Check dependencies
     for tool in ffmpeg ffprobe bc uuidgen; do
@@ -1457,6 +1489,9 @@ main() {
                 shift ;;
             --no-web-search)
                 web_search_enabled="false"
+                shift ;;
+            --use-complexity)
+                use_complexity_analysis="true"
                 shift ;;
             -h|--help)     
                 show_help
@@ -1575,7 +1610,7 @@ main() {
     validate_input "$input"
 
     log INFO "Starting content-adaptive encoding with auto-crop and HDR detection..."
-    run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode"
+    run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode" "$use_complexity_analysis"
 }
 
 # Execute script
