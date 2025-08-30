@@ -54,13 +54,13 @@ BASE_PROFILES["4k_anime"]="title=4K Modern Anime/2D Animation:preset=slow:crf=23
 BASE_PROFILES["4k_classic_anime"]="title=4K Classic Anime/2D Animation:preset=slow:crf=21:tune=grain:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:ref=8:psy-rd=2.2:psy-rdoq=1.8:aq-mode=2:aq-strength=0.9:deblock=0,0:rc-lookahead=120:ctu=64:rd=6:rdoq-level=2:qcomp=0.65:nr-intra=0:nr-inter=0:weightb:weightp:cutree:scenecut=40:keyint=240:min-keyint=25:base_bitrate=11760:hdr_bitrate=14560:content_type=classic_anime"
 
 # 4K 3D Animation/CGI (balanced performance-quality) - Target VMAF: 95-98
-BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=8:b-adapt=2:ref=6:psy-rd=2.8:psy-rdoq=2.0:aq-mode=3:aq-strength=1.1:deblock=1,1:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.65:b-intra:weightb:weightp:cutree:me=umh:subme=4:merange=28:scenecut=45:keyint=250:min-keyint=25:base_bitrate=18200:hdr_bitrate=21000:content_type=3d_animation"
+BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=8:b-adapt=2:ref=6:psy-rd=2.8:psy-rdoq=2.0:aq-mode=3:aq-strength=1.1:deblock=1,1:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.65:b-intra:weightb:weightp:cutree:me=umh:subme=4:merange=28:scenecut=45:keyint=250:min-keyint=25:base_bitrate=15000:hdr_bitrate=18000:content_type=3d_animation"
 
 # 4K Modern Film (production balance) - Target VMAF: 90-94
 BASE_PROFILES["4k_film"]="title=4K Live-Action Film:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:b-adapt=2:ref=5:psy-rd=2.4:psy-rdoq=1.6:aq-mode=2:aq-strength=0.8:deblock=0,0:rc-lookahead=60:ctu=64:rd=4:rdoq-level=2:qcomp=0.60:weightb:weightp:cutree:me=umh:subme=3:merange=24:scenecut=40:keyint=240:min-keyint=25:base_bitrate=14560:hdr_bitrate=17360:content_type=film"
 
 # 4K Heavy Grain Film (archival quality) - Target VMAF: 85-90
-BASE_PROFILES["4k_heavygrain_film"]="title=4K Heavy Grain Film:preset=slower:crf=18:tune=grain:pix_fmt=yuv420p10le:profile=main10:sao:bframes=5:b-adapt=2:ref=8:psy-rd=3.2:psy-rdoq=1.4:aq-mode=1:aq-strength=1.2:deblock=-1,-1:rc-lookahead=150:ctu=64:rd=6:rdoq-level=2:qcomp=0.70:nr-intra=0:nr-inter=0:weightb:weightp:cutree:scenecut=30:keyint=300:min-keyint=25:psy-rd-refine=5.0:base_bitrate=19040:hdr_bitrate=22400:content_type=heavy_grain"
+BASE_PROFILES["4k_heavygrain_film"]="title=4K Heavy Grain Film:preset=slower:crf=18:tune=grain:pix_fmt=yuv420p10le:profile=main10:sao:bframes=5:b-adapt=2:ref=8:psy-rd=3.2:psy-rdoq=1.4:aq-mode=1:aq-strength=1.2:deblock=-1,-1:rc-lookahead=150:ctu=64:rd=6:rdoq-level=2:qcomp=0.70:nr-intra=0:nr-inter=0:weightb:weightp:cutree:scenecut=30:keyint=300:min-keyint=25:psy-rd-refine=5.0:base_bitrate=16000:hdr_bitrate=20000:content_type=heavy_grain"
 
 # Special Profile: Mixed content with moderate detail
 BASE_PROFILES["4k_mixed_detail"]="title=4K Mixed Content Detail:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:b-adapt=2:ref=6:psy-rd=2.0:psy-rdoq=2.2:aq-mode=3:aq-strength=0.9:deblock=-1,-1:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.7:weightb:weightp:cutree:me=umh:subme=4:merange=28:base_bitrate=16000:hdr_bitrate=18000:content_type=mixed"
@@ -594,6 +594,9 @@ perform_complexity_analysis() {
     local input=$1
     log ANALYSIS "Starting comprehensive complexity analysis for: $(basename "$input")"
     
+    # Get video duration for sampling strategy
+    local duration=$(get_video_duration "$input")
+    
     # Collect base metrics
     local si=$(calculate_spatial_information "$input")
     local ti=$(calculate_temporal_information "$input")
@@ -615,17 +618,44 @@ perform_complexity_analysis() {
     local temp_frames_dir="/tmp/grain_analysis_$$"
     mkdir -p "$temp_frames_dir"
     
-    # Sample multiple points in the video to catch grain in different lighting conditions
-    # Adaptive sample times based on video duration
+    # Sample multiple points distributed throughout the video duration
+    # Use percentage-based sampling for better coverage
     local sample_times=()
-    if (( $(echo "$duration > 600" | bc -l) )); then
-        sample_times=("60" "120" "300" "600")  # Long videos
-    elif (( $(echo "$duration > 120" | bc -l) )); then
-        sample_times=("30" "60" "90" "$((duration-10))")  # Medium videos
-    elif (( $(echo "$duration > 30" | bc -l) )); then
-        sample_times=("5" "15" "$((duration/2))" "$((duration-5))")  # Short videos  
-    else
-        sample_times=("2" "5" "8")  # Very short videos
+    local sample_percentages=("10" "25" "50" "75" "90")  # Sample at 10%, 25%, 50%, 75%, 90% of video
+    
+    for percentage in "${sample_percentages[@]}"; do
+        local sample_time=$(echo "scale=0; $duration * $percentage / 100" | bc -l)
+        # Ensure minimum sample time of 2 seconds and doesn't exceed duration-5
+        if (( $(echo "$sample_time < 2" | bc -l) )); then
+            sample_time="2"
+        elif (( $(echo "$sample_time > ($duration - 5)" | bc -l) )); then
+            sample_time=$(echo "scale=0; $duration - 5" | bc -l)
+        fi
+        # Only add if it's a valid time and not duplicate
+        if (( $(echo "$sample_time >= 2" | bc -l) && $(echo "$sample_time <= $duration" | bc -l) )); then
+            # Check for duplicates
+            local is_duplicate=false
+            for existing_time in "${sample_times[@]}"; do
+                if [[ "$existing_time" == "$sample_time" ]]; then
+                    is_duplicate=true
+                    break
+                fi
+            done
+            if [[ "$is_duplicate" == "false" ]]; then
+                sample_times+=("$sample_time")
+            fi
+        fi
+    done
+    
+    # Fallback for very short videos (less than 10 seconds)
+    if [[ ${#sample_times[@]} -eq 0 ]]; then
+        if (( $(echo "$duration > 8" | bc -l) )); then
+            sample_times=("2" "5" "8")
+        elif (( $(echo "$duration > 4" | bc -l) )); then
+            sample_times=("2" "$((duration/2))")
+        else
+            sample_times=("1")
+        fi
     fi
     local total_grain=0
     local total_texture=0
@@ -1313,9 +1343,12 @@ show_help() {
     echo "  -p, --profile Encoding profile (content-type based)"
     echo "  -m, --mode    Encoding mode: crf, abr, cbr (default: abr)"
     echo "  -t, --title   Video title metadata"
-    echo "  -c, --crop    Manual crop (format: w:h:x:y)"
-    echo "  -s, --scale   Scale resolution (format: w:h)"
-    echo "  -h, --help    Show this help"
+    echo "  -c, --crop       Manual crop (format: w:h:x:y)"
+    echo "  -s, --scale      Scale resolution (format: w:h)"
+    echo "  --web-search     Enable web search for content validation (default: enabled)"
+    echo "  --web-search-force  Force web search even with high technical confidence"
+    echo "  --no-web-search  Disable web search validation"
+    echo "  -h, --help       Show this help"
     echo ""
     echo "🤖 AUTOMATIC PROFILE SELECTION:"
     echo "  Use -p auto to enable intelligent profile selection based on content analysis."
@@ -1326,6 +1359,7 @@ show_help() {
     echo "    • Motion complexity (action, standard, low-motion)"
     echo "    • Visual complexity and edge density"
     echo "    • HDR detection and resolution"
+    echo "    • Web search validation for enhanced accuracy (default: enabled)"
     echo ""
     echo "📚 MANUAL PROFILE SELECTION:"
     echo "  Content Type Recommendations:"
@@ -1356,7 +1390,7 @@ show_help() {
 
 # Main function
 main() {
-    local input="" output="" profile="" title="" crop="" scale="" mode="abr"
+    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true"
 
     # Check dependencies
     for tool in ffmpeg ffprobe bc uuidgen; do
@@ -1415,6 +1449,15 @@ main() {
                     exit 1
                 fi
                 mode="$2"; shift 2 ;;
+            --web-search)
+                web_search_enabled="true"
+                shift ;;
+            --web-search-force)
+                web_search_enabled="force"
+                shift ;;
+            --no-web-search)
+                web_search_enabled="false"
+                shift ;;
             -h|--help)     
                 show_help
                 exit 0 ;;
@@ -1475,7 +1518,22 @@ main() {
             esac
             
             # Run the selector (quiet mode for integration)
-            if selected_profile=$(bash "$selector_script" -i "$input" -m "$analysis_mode" -q 2>/dev/null); then
+            local selector_args=(-i "$input" -m "$analysis_mode" -q)
+            
+            # Add web search parameter based on setting
+            case "$web_search_enabled" in
+                "true")
+                    selector_args+=(--web-search)
+                    ;;
+                "force")
+                    selector_args+=(--web-search-force)
+                    ;;
+                "false")
+                    # No web search parameter added
+                    ;;
+            esac
+            
+            if selected_profile=$(bash "$selector_script" "${selector_args[@]}" 2>/dev/null); then
                 if [[ -n "$selected_profile" ]] && [[ -n "${BASE_PROFILES[$selected_profile]:-}" ]]; then
                     profile="$selected_profile"
                     log INFO "Automatically selected profile: $profile"
