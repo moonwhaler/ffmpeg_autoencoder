@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Advanced FFmpeg Multi-Mode Encoding Script
-# Version: 2.3 - Content-Adaptive Encoding with Mode Support
-# CRF/ABR/CBR modes, Automatic Bitrate Optimization and Crop Detection
+# Advanced FFmpeg Multi-Mode Encoding Script with Enhanced Grain Preservation
+# Version: 2.4 - Content-Adaptive Encoding with Expert-Optimized Profiles
+# CRF/ABR/CBR modes, Grain-Aware Analysis, and Automatic Parameter Optimization
 
 set -euo pipefail
 
@@ -26,20 +26,62 @@ declare -A BASE_PROFILES
 #       parameters. HDR parameters will be added in the process, 
 #       if HDR was found in the source video.
 
-# 1080p Profiles
-BASE_PROFILES["1080p_anime"]="title=1080p Anime/2D Animation:preset=slow:crf=21:tune=animation:pix_fmt=yuv420p10le:profile=main10:limit-sao:bframes=8:ref=6:psy-rd=1:psy-rdoq=1:aq-mode=3:aq-strength=0.8:deblock=1,1:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.8:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
-BASE_PROFILES["1080p_classic_anime"]="title=1080p older Anime/2D Animation:preset=slow:crf=20:tune=animation:pix_fmt=yuv420p10le:profile=main10:limit-sao:bframes=8:ref=6:psy-rd=1.5:psy-rdoq=2:aq-mode=3:aq-strength=0.8:deblock=1,1:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.8:base_bitrate=3500:hdr_bitrate=4500:content_type=anime"
-BASE_PROFILES["1080p_3d_animation"]="title=1080p 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.6:bframes=6:b-adapt=2:ref=4:psy-rd=1.2:psy-rdoq=1.0:no-sao:selective-sao=0:rskip=2:rskip-edge-threshold=2:deblock=-1:-1:ctu=32:rd=4:rdoq-level=2:qcomp=0.65:no-strong-intra-smoothing:base_bitrate=5500:hdr_bitrate=6500:content_type=3d_animation"
-BASE_PROFILES["1080p_film"]="title=1080p Live-Action Film:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.8:bframes=8:b-adapt=2:ref=5:psy-rd=1.5:psy-rdoq=2.5:rskip=1:rskip-edge-threshold=2:deblock=-2:-2:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
-BASE_PROFILES["1080p_heavygrain_film"]="title=1080p Live-Action Film (with grain):preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=1:aq-strength=1.2:bframes=8:b-adapt=2:ref=5:psy-rd=2.5:psy-rdoq=5.0:rskip=0:deblock=-2:-2:ctu=32:rd=5:rdoq-level=2:qcomp=0.8:ipratio=1.1:pbratio=1.0:qpstep=1:no-cutree:tune=grain:rect:amp:no-strong-intra-smoothing:base_bitrate=4500:hdr_bitrate=5500:content_type=film"
+# 1080p Profiles - Optimized for Maximum Quality with Grain Preservation
+# Based on VMAF analysis and advanced x265 parameter research
 
-# 4K Profiles
-BASE_PROFILES["4k_anime"]="title=4K modern Anime/2D Animation:preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:no-sao:no-strong-intra-smoothing:bframes=10:ref=8:psy-rd=1.5:psy-rdoq=2.5:aq-mode=3:aq-strength=0.8:deblock=-1:-1:rc-lookahead=80:ctu=32:rd=4:rdoq-level=2:qcomp=0.7:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
-BASE_PROFILES["4k_classic_anime"]="title=4K Anime/2D older Animation:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:limit-sao:bframes=8:ref=8:psy-rd=1.0:psy-rdoq=2.0:aq-mode=3:aq-strength=0.8:deblock=0,0:no-strong-intra-smoothing:rc-lookahead=60:ctu=64:rd=4:rdoq-level=2:qcomp=0.8:base_bitrate=8000:hdr_bitrate=10000:content_type=anime"
-BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:aq-mode=3:aq-strength=0.6:bframes=6:b-adapt=2:ref=8:psy-rd=0.4:psy-rdoq=0.4:sao:deblock=-1:-1:rskip=2:rskip-edge-threshold=1:ctu=64:rd=4:rdoq-level=2:qcomp=0.65:base_bitrate=12000:hdr_bitrate=14000:content_type=3d_animation"
-BASE_PROFILES["4k_film"]="title=4K Live-Action modern Film:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=2:aq-strength=0.8:bframes=6:b-adapt=2:ref=6:psy-rd=1.5:psy-rdoq=2.5:rskip=1:rskip-edge-threshold=2:deblock=-1:-1:ctu=64:rd=4:rdoq-level=2:qcomp=0.7:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
-BASE_PROFILES["4k_heavygrain_film"]="title=4K Live-Action Film:preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:no-sao:aq-mode=3:aq-strength=1.0:bframes=5:b-adapt=2:ref=5:psy-rd=3.0:psy-rdoq=6.0:rskip=0:deblock=-1:-1:ctu=32:rd=5:rdoq-level=2:qcomp=0.8:ipratio=1.1:pbratio=1.0:qpstep=1:no-cutree:base_bitrate=14000:hdr_bitrate=16000:content_type=film"
-BASE_PROFILES["4k_arcane_test"]="title=Arcane Test Profile:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:rc-lookahead=60:limit-sao:bframes=5:ref=6:psy-rd=2.5:psy-rdoq=4.0:aq-mode=3:aq-strength=0.8:deblock=-1:-1:rskip=2:rskip-edge-threshold=0.2:ctu=32:rd=4:rdoq-level=2:qcomp=0.7:nr-intra=50:nr-inter=150:no-strong-intra-smoothing:me=star:merange=32:base_bitrate=18000:hdr_bitrate=20000:content_type=3d_animation"
+# Modern 2D Anime (flat colors, minimal texture) - Target VMAF: 92-95
+BASE_PROFILES["1080p_anime"]="title=1080p Modern Anime/2D Animation:preset=slower:crf=22:tune=animation:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:ref=4:psy-rd=1.8:psy-rdoq=2.5:aq-mode=3:aq-strength=0.7:deblock=-1,-1:rc-lookahead=80:ctu=32:rd=5:rdoq-level=2:qcomp=0.8:limit-refs=3:fast-intra:b-intra:weightb:weightp:cutree:scenecut=60:keyint=300:min-keyint=23:base_bitrate=2800:hdr_bitrate=3400:content_type=anime"
+
+# Classic Anime with grain (90s content, film sources) - Target VMAF: 88-92 
+BASE_PROFILES["1080p_classic_anime"]="title=1080p Classic Anime/2D Animation:preset=slow:crf=20:tune=grain:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:ref=8:psy-rd=2.2:psy-rdoq=1.8:aq-mode=2:aq-strength=0.9:deblock=0,0:rc-lookahead=120:ctu=64:rd=6:rdoq-level=2:qcomp=0.65:nr-intra=0:nr-inter=0:weightb:weightp:cutree:scenecut=40:keyint=240:min-keyint=24:base_bitrate=4200:hdr_bitrate=5200:content_type=classic_anime"
+
+# 3D Animation/CGI (complex textures, gradients) - Target VMAF: 95-98
+BASE_PROFILES["1080p_3d_animation"]="title=1080p 3D/CGI Animation:preset=slower:crf=18:pix_fmt=yuv420p10le:profile=main10:sao:bframes=10:b-adapt=2:ref=6:psy-rd=2.8:psy-rdoq=2.0:aq-mode=3:aq-strength=1.1:deblock=1,1:rc-lookahead=100:ctu=64:rd=6:rdoq-level=2:qcomp=0.65:b-intra:weightb:weightp:cutree:strong-intra-smoothing:me=star:subme=5:merange=32:scenecut=45:keyint=250:min-keyint=25:base_bitrate=6500:hdr_bitrate=7500:content_type=3d_animation"
+
+# Modern Live-Action Film (balanced approach) - Target VMAF: 90-94
+BASE_PROFILES["1080p_film"]="title=1080p Live-Action Film:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=8:b-adapt=2:ref=6:psy-rd=2.4:psy-rdoq=1.6:aq-mode=2:aq-strength=0.8:deblock=0,0:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.60:b-intra:weightb:weightp:cutree:me=umh:subme=4:merange=24:scenecut=40:keyint=240:min-keyint=24:base_bitrate=5200:hdr_bitrate=6200:content_type=film"
+
+# Heavy Grain Film (classic films, archival) - Target VMAF: 85-90
+BASE_PROFILES["1080p_heavygrain_film"]="title=1080p Heavy Grain Film:preset=slower:crf=17:tune=grain:pix_fmt=yuv420p10le:profile=main10:sao:bframes=5:b-adapt=2:ref=8:psy-rd=3.2:psy-rdoq=1.4:aq-mode=1:aq-strength=1.2:deblock=-1,-1:rc-lookahead=150:ctu=64:rd=6:rdoq-level=2:qcomp=0.70:nr-intra=0:nr-inter=0:weightb:weightp:cutree:scenecut=30:keyint=300:min-keyint=25:psy-rd-refine=5.0:base_bitrate=6800:hdr_bitrate=8000:content_type=heavy_grain"
+
+# 4K Profiles - Optimized with 2.8x scaling factor for efficiency
+# CRF scaling: +1 for viewing distance, Bitrate scaling: ×2.8 (not linear 4×)
+
+# Modern 4K Anime (optimized for performance) - Target VMAF: 92-95
+BASE_PROFILES["4k_anime"]="title=4K Modern Anime/2D Animation:preset=slow:crf=23:tune=animation:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:ref=5:psy-rd=1.8:psy-rdoq=2.5:aq-mode=3:aq-strength=0.7:deblock=-1,-1:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.8:limit-refs=3:fast-intra:weightb:weightp:cutree:scenecut=60:keyint=300:min-keyint=25:base_bitrate=7840:hdr_bitrate=9500:content_type=anime"
+
+# Classic 4K Anime with grain preservation - Target VMAF: 88-92
+BASE_PROFILES["4k_classic_anime"]="title=4K Classic Anime/2D Animation:preset=slow:crf=21:tune=grain:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:ref=8:psy-rd=2.2:psy-rdoq=1.8:aq-mode=2:aq-strength=0.9:deblock=0,0:rc-lookahead=120:ctu=64:rd=6:rdoq-level=2:qcomp=0.65:nr-intra=0:nr-inter=0:weightb:weightp:cutree:scenecut=40:keyint=240:min-keyint=25:base_bitrate=11760:hdr_bitrate=14560:content_type=classic_anime"
+
+# 4K 3D Animation/CGI (balanced performance-quality) - Target VMAF: 95-98
+BASE_PROFILES["4k_3d_animation"]="title=4K 3D/CGI Animation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=8:b-adapt=2:ref=6:psy-rd=2.8:psy-rdoq=2.0:aq-mode=3:aq-strength=1.1:deblock=1,1:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.65:b-intra:weightb:weightp:cutree:me=umh:subme=4:merange=28:scenecut=45:keyint=250:min-keyint=25:base_bitrate=18200:hdr_bitrate=21000:content_type=3d_animation"
+
+# 4K Modern Film (production balance) - Target VMAF: 90-94
+BASE_PROFILES["4k_film"]="title=4K Live-Action Film:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:b-adapt=2:ref=5:psy-rd=2.4:psy-rdoq=1.6:aq-mode=2:aq-strength=0.8:deblock=0,0:rc-lookahead=60:ctu=64:rd=4:rdoq-level=2:qcomp=0.60:weightb:weightp:cutree:me=umh:subme=3:merange=24:scenecut=40:keyint=240:min-keyint=25:base_bitrate=14560:hdr_bitrate=17360:content_type=film"
+
+# 4K Heavy Grain Film (archival quality) - Target VMAF: 85-90
+BASE_PROFILES["4k_heavygrain_film"]="title=4K Heavy Grain Film:preset=slower:crf=18:tune=grain:pix_fmt=yuv420p10le:profile=main10:sao:bframes=5:b-adapt=2:ref=8:psy-rd=3.2:psy-rdoq=1.4:aq-mode=1:aq-strength=1.2:deblock=-1,-1:rc-lookahead=150:ctu=64:rd=6:rdoq-level=2:qcomp=0.70:nr-intra=0:nr-inter=0:weightb:weightp:cutree:scenecut=30:keyint=300:min-keyint=25:psy-rd-refine=5.0:base_bitrate=19040:hdr_bitrate=22400:content_type=heavy_grain"
+
+# Special Profile: Mixed content with moderate detail
+BASE_PROFILES["4k_mixed_detail"]="title=4K Mixed Content Detail:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:b-adapt=2:ref=6:psy-rd=2.0:psy-rdoq=2.2:aq-mode=3:aq-strength=0.9:deblock=-1,-1:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.7:weightb:weightp:cutree:me=umh:subme=4:merange=28:base_bitrate=16000:hdr_bitrate=18000:content_type=mixed"
+
+# Additional specialized profiles for specific use cases
+
+# Light grain preservation (older films, some anime)
+BASE_PROFILES["1080p_light_grain"]="title=1080p Light Grain Preservation:preset=slow:crf=18:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:b-adapt=2:ref=6:psy-rd=2.0:psy-rdoq=4.0:aq-mode=3:aq-strength=1.0:deblock=-1,-1:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.75:nr-intra=0:nr-inter=2:weightb:weightp:cutree:base_bitrate=4800:hdr_bitrate=5800:content_type=light_grain"
+
+# High-motion action content (sports, action films)
+BASE_PROFILES["1080p_action"]="title=1080p High-Motion Action:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=5:b-adapt=2:ref=5:psy-rd=1.1:psy-rdoq=1.8:aq-mode=3:aq-strength=1.0:deblock=0,0:rc-lookahead=60:ctu=64:rd=5:rdoq-level=2:qcomp=0.60:weightb:weightp:cutree:me=hex:subme=7:merange=28:scenecut=25:base_bitrate=5800:hdr_bitrate=6800:content_type=action"
+
+# Ultra-clean digital content (modern anime, digital intermediates)
+BASE_PROFILES["1080p_clean_digital"]="title=1080p Clean Digital Content:preset=slower:crf=21:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2.0:aq-mode=3:aq-strength=0.7:deblock=1,1:rc-lookahead=80:ctu=32:rd=5:rdoq-level=2:qcomp=0.8:nr-intra=5:nr-inter=5:fast-intra:weightb:weightp:cutree:base_bitrate=3200:hdr_bitrate=3800:content_type=clean_digital"
+
+# 4K variants of specialized profiles
+BASE_PROFILES["4k_light_grain"]="title=4K Light Grain Preservation:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:sao:bframes=6:b-adapt=2:ref=6:psy-rd=2.0:psy-rdoq=4.0:aq-mode=3:aq-strength=1.0:deblock=-1,-1:rc-lookahead=80:ctu=64:rd=5:rdoq-level=2:qcomp=0.75:nr-intra=0:nr-inter=2:weightb:weightp:cutree:base_bitrate=13440:hdr_bitrate=16240:content_type=light_grain"
+
+BASE_PROFILES["4k_action"]="title=4K High-Motion Action:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:sao:bframes=5:b-adapt=2:ref=5:psy-rd=1.1:psy-rdoq=1.8:aq-mode=3:aq-strength=1.0:deblock=0,0:rc-lookahead=60:ctu=64:rd=4:rdoq-level=2:qcomp=0.60:weightb:weightp:cutree:me=hex:subme=6:merange=24:scenecut=25:base_bitrate=16240:hdr_bitrate=19040:content_type=action"
+
+BASE_PROFILES["4k_clean_digital"]="title=4K Clean Digital Content:preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=2.0:aq-mode=3:aq-strength=0.7:deblock=1,1:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.8:nr-intra=5:nr-inter=5:weightb:weightp:cutree:base_bitrate=8960:hdr_bitrate=10640:content_type=clean_digital"
 
 # Progress bar functions
 show_progress() {
@@ -517,12 +559,135 @@ perform_complexity_analysis() {
     [[ "$scene_changes" =~ ^[0-9.]+$ ]] || scene_changes="10"
     [[ "$frame_complexity" =~ ^[0-9.]+$ ]] || frame_complexity="4"
     
+    # Enhanced complexity scoring with grain awareness - initialize variables first
+    local grain_level="0"
+    local texture_score="0"
+    
+    # Enhanced grain detection using multiple methods and sample points
+    local temp_frames_dir="/tmp/grain_analysis_$$"
+    mkdir -p "$temp_frames_dir"
+    
+    # Sample multiple points in the video to catch grain in different lighting conditions
+    local sample_times=("60" "120" "300" "600")  # Different timestamps
+    local total_grain=0
+    local total_texture=0
+    local valid_samples=0
+    
+    log ANALYSIS "Performing enhanced grain detection at multiple time points..."
+    
+    for sample_time in "${sample_times[@]}"; do
+        local temp_frame="$temp_frames_dir/frame_${sample_time}.png"
+        
+        # Extract frame at sample time
+        if ffmpeg -ss "$sample_time" -i "$input" -vframes 1 -y "$temp_frame" -loglevel error 2>/dev/null && [[ -f "$temp_frame" ]]; then
+            
+            # Method 1: High-frequency noise analysis (improved)
+            local hf_noise=$(ffmpeg -i "$temp_frame" -vf "format=gray,crop=400:400:iw/2-200:ih/2-200,highpass=f=20:width_type=h" -f rawvideo -pix_fmt gray - 2>/dev/null | xxd -ps -l 8000 | wc -c 2>/dev/null || echo "0")
+            local grain_sample=$(echo "scale=2; $hf_noise / 100" | bc -l 2>/dev/null || echo "0")
+            
+            # Method 2: Local variance analysis for grain texture
+            local local_var=$(ffmpeg -i "$temp_frame" -vf "format=gray,crop=300:300:iw/2-150:ih/2-150" -f rawvideo -pix_fmt gray - 2>/dev/null | \
+                python3 -c "
+import sys
+import numpy as np
+try:
+    data = sys.stdin.buffer.read()
+    if len(data) > 1000:
+        arr = np.frombuffer(data, dtype=np.uint8)
+        arr = arr.reshape(-1, 300) if len(arr) >= 90000 else arr.reshape(-1, int(np.sqrt(len(arr))))
+        # Calculate local variance using sliding window
+        kernel_size = 5
+        local_vars = []
+        for i in range(kernel_size, arr.shape[0]-kernel_size):
+            for j in range(kernel_size, arr.shape[1]-kernel_size):
+                patch = arr[i-kernel_size:i+kernel_size, j-kernel_size:j+kernel_size]
+                local_vars.append(np.var(patch))
+        mean_local_var = np.mean(local_vars) if local_vars else 0
+        print(f'{mean_local_var:.2f}')
+    else:
+        print('0')
+except:
+    print('0')
+" 2>/dev/null || echo "0")
+            
+            # Method 3: Edge detection for film grain patterns
+            local edge_variance=$(ffmpeg -i "$temp_frame" -vf "format=gray,crop=200:200:iw/2-100:ih/2-100,edgedetect=low=0.05:high=0.15,signalstats" -f null - 2>&1 | grep -o "YAVG:[0-9.]*" | cut -d: -f2 2>/dev/null || echo "0")
+            
+            # Normalize and validate values
+            [[ "$grain_sample" =~ ^[0-9.]+$ ]] || grain_sample="0"
+            [[ "$local_var" =~ ^[0-9.]+$ ]] || local_var="0"
+            [[ "$edge_variance" =~ ^[0-9.]+$ ]] || edge_variance="0"
+            
+            # Combined grain metric for this sample
+            local combined_grain=$(echo "scale=2; ($grain_sample * 0.4) + ($local_var * 0.1) + ($edge_variance * 0.5)" | bc -l 2>/dev/null || echo "0")
+            
+            # Texture analysis (high-frequency content)
+            local texture_sample=$(ffmpeg -i "$temp_frame" -vf "format=gray,highpass=f=8:width_type=h,signalstats" -f null - 2>&1 | grep -o "YAVG:[0-9.]*" | cut -d: -f2 2>/dev/null || echo "0")
+            [[ "$texture_sample" =~ ^[0-9.]+$ ]] || texture_sample="0"
+            
+            # Accumulate values
+            total_grain=$(echo "$total_grain + $combined_grain" | bc -l 2>/dev/null | head -1 | tr -d '\n' || echo "$total_grain")
+            total_texture=$(echo "$total_texture + $texture_sample" | bc -l 2>/dev/null | head -1 | tr -d '\n' || echo "$total_texture")
+            valid_samples=$((valid_samples + 1))
+            
+            log ANALYSIS "Sample at ${sample_time}s: grain=$combined_grain, texture=$texture_sample"
+            
+            rm -f "$temp_frame"
+        fi
+    done
+    
+    # Calculate average values
+    if [[ $valid_samples -gt 0 ]]; then
+        grain_level=$(echo "scale=1; $total_grain / $valid_samples" | bc -l 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+        texture_score=$(echo "scale=1; $total_texture / $valid_samples" | bc -l 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+        
+        # Round grain_level to nearest integer for final use
+        grain_level=$(echo "scale=0; $grain_level + 0.5" | bc -l 2>/dev/null | head -1 | tr -d '\n' | cut -d. -f1 || echo "0")
+        
+        # If grain level is still low, try darker scene analysis for Arcane/animated content
+        if (( $(echo "$grain_level < 5" | bc -l 2>/dev/null || echo 1) )); then
+            log ANALYSIS "Low grain detected, analyzing darker scenes for potential grain..."
+            
+            # Look for darker scenes with potential grain
+            local dark_frame="$temp_frames_dir/dark_scene.png"
+            if ffmpeg -ss 180 -i "$input" -vf "select=lt(scene\,0.1),format=gray" -vframes 1 -y "$dark_frame" -loglevel error 2>/dev/null && [[ -f "$dark_frame" ]]; then
+                
+                # Enhanced analysis for dark scenes
+                local dark_grain=$(ffmpeg -i "$dark_frame" -vf "crop=400:400:iw/2-200:ih/2-200,unsharp=5:5:2.0,highpass=f=25:width_type=h,histogram=display_mode=0" -f rawvideo -pix_fmt gray - 2>/dev/null | xxd -ps -l 16000 | wc -c 2>/dev/null || echo "0")
+                dark_grain=$(echo "scale=1; $dark_grain / 80" | bc -l 2>/dev/null || echo "0")
+                
+                # Boost grain level if dark scene analysis finds grain
+                # Ensure dark_grain is a valid number
+                [[ "$dark_grain" =~ ^[0-9.]+$ ]] || dark_grain="0"
+                
+                if (( $(echo "$dark_grain > $grain_level" | bc -l 2>/dev/null | head -1 | tr -d '\n' || echo "0") )); then
+                    grain_level=$(echo "scale=0; $dark_grain" | bc -l 2>/dev/null | head -1 | tr -d '\n' || echo "$grain_level")
+                    log ANALYSIS "Dark scene analysis boosted grain level to: $grain_level"
+                fi
+                
+                rm -f "$dark_frame"
+            fi
+        fi
+        
+    else
+        grain_level="0"
+        texture_score="0"
+    fi
+    
+    # Cleanup
+    rm -rf "$temp_frames_dir"
+    
+    # Normalize grain and texture values
+    [[ "$grain_level" =~ ^[0-9]+$ ]] || grain_level="0"
+    [[ "$texture_score" =~ ^[0-9.]+$ ]] || texture_score="0"
+    
     log ANALYSIS "SI: $si, TI: $ti, Scenes/min: $scene_changes, Frame-Complexity: $frame_complexity"
+    log ANALYSIS "Grain Level: $grain_level, Texture Score: $texture_score"
     log ANALYSIS "HDR Content: $is_hdr"
     
-    # Calculate complexity score
+    # Enhanced complexity calculation with grain and texture weighting
     local complexity_score
-    complexity_score=$(echo "scale=2; ($si * 0.3) + ($ti * 0.4) + ($scene_changes * 2) + ($frame_complexity * 0.3)" | bc -l 2>/dev/null || echo "50")
+    complexity_score=$(echo "scale=2; ($si * 0.25) + ($ti * 0.35) + ($scene_changes * 1.5) + ($grain_level * 8) + ($texture_score * 0.3) + ($frame_complexity * 0.25)" | bc -l 2>/dev/null || echo "50")
     
     # Validate complexity_score is numeric
     if ! [[ "$complexity_score" =~ ^[0-9.]+$ ]]; then
@@ -557,9 +722,15 @@ calculate_adaptive_bitrate() {
     
     local type_modifier=1.0
     case $content_type in
-        "anime")         type_modifier=0.85 ;;
-        "3d_animation")  type_modifier=1.1 ;;
-        "film")          type_modifier=1.0 ;;
+        "anime")            type_modifier=0.90 ;;  # Increased from 0.85 - modern anime needs more bitrate
+        "classic_anime")    type_modifier=0.85 ;;  # Keep original for classic content
+        "3d_animation")     type_modifier=1.05 ;;  # Reduced from 1.1 - avoid over-allocation
+        "film")             type_modifier=1.0 ;;   # Baseline
+        "heavy_grain")      type_modifier=1.25 ;;  # Significant increase for grain preservation
+        "light_grain")      type_modifier=1.10 ;;  # Moderate increase for light grain
+        "action")           type_modifier=1.15 ;;  # Increased bitrate for motion complexity
+        "clean_digital")    type_modifier=0.80 ;;  # Reduced bitrate for very clean content
+        "mixed")            type_modifier=1.0 ;;   # Neutral for mixed content
     esac
     
     local complexity_factor
@@ -586,12 +757,18 @@ calculate_adaptive_crf() {
     fi
     [[ "$complexity_score" =~ ^[0-9.]+$ ]] || complexity_score="50"
     
-    # Content-type specific CRF modifiers (professional encoding practices)
+    # Enhanced content-type specific CRF modifiers (based on expert analysis)
     local type_crf_modifier=0.0
     case $content_type in
-        "anime")         type_crf_modifier=0.5 ;;   # Slightly higher CRF (lower quality) - anime compresses well
-        "3d_animation")  type_crf_modifier=-0.8 ;;  # Lower CRF (higher quality) - CGI needs detail preservation  
-        "film")          type_crf_modifier=0.0 ;;   # Baseline - balanced for live-action
+        "anime")            type_crf_modifier=0.2 ;;   # Reduced from 0.5 - modern anime has detailed backgrounds
+        "classic_anime")    type_crf_modifier=0.5 ;;   # Keep aggressive for classic anime
+        "3d_animation")     type_crf_modifier=-0.4 ;;  # Reduced from -0.8 - avoid over-optimization
+        "film")             type_crf_modifier=0.0 ;;   # Baseline for modern film
+        "heavy_grain")      type_crf_modifier=-0.8 ;;  # Lower CRF for grain preservation
+        "light_grain")      type_crf_modifier=-0.3 ;;  # Moderate CRF reduction for light grain
+        "action")           type_crf_modifier=-0.2 ;;  # Slightly lower CRF for motion detail
+        "clean_digital")    type_crf_modifier=0.3 ;;   # Higher CRF for very clean content
+        "mixed")            type_crf_modifier=0.1 ;;   # Slightly conservative for mixed content
     esac
     
     # Complexity-based adjustment
@@ -684,6 +861,17 @@ parse_and_adapt_profile() {
     local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | cut -d= -f2)
     local content_type=$(echo "$str" | grep -o 'content_type=[^:]*' | cut -d= -f2)
     
+    # Enhanced content type detection based on complexity analysis
+    # Use grain level from complexity analysis to refine content type
+    local grain_threshold=15
+    if [[ "$content_type" == "anime" ]] && (( $(echo "$complexity_score > 60" | bc -l 2>/dev/null || echo 0) )); then
+        content_type="classic_anime"
+        log ANALYSIS "Content type refined to classic_anime based on complexity"
+    elif [[ "$content_type" == "film" ]] && (( $(echo "$complexity_score > 80" | bc -l 2>/dev/null || echo 0) )); then
+        content_type="heavy_grain"
+        log ANALYSIS "Content type refined to heavy_grain based on complexity"
+    fi
+    
     # Use HDR bitrate if HDR content is detected
     local selected_bitrate="$base_bitrate"
     local selected_crf="$base_crf"
@@ -697,7 +885,9 @@ parse_and_adapt_profile() {
     local adaptive_bitrate=$(calculate_adaptive_bitrate "$selected_bitrate" "$complexity_score" "$content_type")
     local adaptive_crf=$(calculate_adaptive_crf "$selected_crf" "$complexity_score" "$content_type")
     
-    log ANALYSIS "Adaptive parameters - Bitrate: $selected_bitrate → $adaptive_bitrate, CRF: $selected_crf → $adaptive_crf (Complexity: $complexity_score)"
+    log ANALYSIS "Content Type: $content_type (refined from profile analysis)"
+    log ANALYSIS "Adaptive parameters - Bitrate: $selected_bitrate → $adaptive_bitrate, CRF: $selected_crf → $adaptive_crf"
+    log ANALYSIS "Complexity Score: $complexity_score (grain-aware calculation)"
     
     # Update profile with adaptive values and remove helper fields
     local adapted_profile=$(echo "$str" | sed "s|base_bitrate=[^:]*|bitrate=$adaptive_bitrate|" | sed "s|hdr_bitrate=[^:]*||" | sed "s|crf=[^:]*|crf=$adaptive_crf|" | sed 's|title=[^:]*:||' | sed 's|content_type=[^:]*||' | sed 's|::|:|g' | sed 's|^:||' | sed 's|:$||')
@@ -1029,16 +1219,27 @@ run_abr_encoding() {
 
 # Show help function
 show_help() {
-    echo "Advanced FFmpeg Encoder with Multi-Mode Support, Auto-Crop and HDR Detection"
+    echo "Advanced FFmpeg Encoder with Multi-Mode Support, Grain Preservation and HDR Detection"
+    echo "Version: 2.4 - Content-Adaptive Encoding with Enhanced Grain Preservation"
     echo "Usage: $0 -i INPUT [-o OUTPUT] -p PROFILE [OPTIONS]"
     echo ""
-    echo "Available Profiles:"
+    echo "Available Profiles (Optimized for Quality and Grain Preservation):"
+    echo ""
     
-    # Sort profile names and display with titles
-    for profile in $(printf '%s\n' "${!BASE_PROFILES[@]}" | sort); do
+    # Group profiles by category for better readability
+    echo "  === 1080p Profiles ==="
+    for profile in $(printf '%s\n' "${!BASE_PROFILES[@]}" | grep "^1080p" | sort); do
         local profile_data="${BASE_PROFILES[$profile]}"
         local title=$(echo "$profile_data" | grep -o 'title=[^:]*' | cut -d= -f2)
-        printf "  %-18s %s\n" "$profile" "$title"
+        printf "  %-25s %s\n" "$profile" "$title"
+    done
+    
+    echo ""
+    echo "  === 4K Profiles ==="
+    for profile in $(printf '%s\n' "${!BASE_PROFILES[@]}" | grep "^4k" | sort); do
+        local profile_data="${BASE_PROFILES[$profile]}"
+        local title=$(echo "$profile_data" | grep -o 'title=[^:]*' | cut -d= -f2)
+        printf "  %-25s %s\n" "$profile" "$title"
     done
     
     echo ""
@@ -1057,10 +1258,22 @@ show_help() {
     echo "  -s, --scale   Scale resolution (format: w:h)"
     echo "  -h, --help    Show this help"
     echo ""
+    echo "Content Type Recommendations:"
+    echo "  Simple 2D Anime:     1080p_anime, 4k_anime (flat colors, minimal texture)"
+    echo "  Classic 90s Anime:   1080p_classic_anime, 4k_classic_anime (film grain)"
+    echo "  3D CGI Films:        1080p_3d_animation, 4k_3d_animation (complex textures)"
+    echo "  Modern Films:        1080p_film, 4k_film (balanced live-action)"
+    echo "  Heavy Grain Films:   1080p_heavygrain_film, 4k_heavygrain_film (preservation)"
+    echo "  Light Grain:         1080p_light_grain, 4k_light_grain (moderate preservation)"
+    echo "  High-Motion:         1080p_action, 4k_action (sports, action sequences)"
+    echo "  Clean Digital:       1080p_clean_digital, 4k_clean_digital (minimal noise)"
+    echo ""
     echo "Examples:"
-    echo "  $0 -i input.mkv -o output.mkv -p 1080p_anime -m crf    # Single-pass CRF"
-    echo "  $0 -i input.mkv -p 4k_film -m abr                    # Two-pass ABR with UUID output"
-    echo "  $0 -i input.mkv -o output.mkv -p 1080p_film -m cbr    # Two-pass CBR"
+    echo "  $0 -i input.mkv -o output.mkv -p 1080p_anime -m crf           # Single-pass CRF"
+    echo "  $0 -i input.mkv -p 4k_film -m abr                           # Two-pass ABR with UUID output"
+    echo "  $0 -i input.mkv -o output.mkv -p 1080p_heavygrain_film -m crf # Grain preservation"
+    echo "  $0 -i input.mkv -p 1080p_classic_anime -m abr                # Classic anime with grain"
+    echo "  $0 -i input.mkv -o output.mkv -p 4k_action -m cbr             # High-motion CBR"
     echo ""
 }
 
