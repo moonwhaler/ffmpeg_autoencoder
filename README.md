@@ -237,13 +237,17 @@ Balanced parameters for natural motion, lighting, and live-action content.
 
 ### **Content Type Recommendations**
 
-| Content Type | Recommended Profile | Best Mode | Reasoning |
-|--------------|-------------------|-----------|-----------|
-| **Anime/2D Animation** | `1080p_anime` / `4k_anime` | `CRF` or `ABR` | Flat areas compress efficiently |
-| **3D Animation/CGI** | `1080p_3d_animation` / `4k_3d_animation` | `CRF` | Preserve rendering detail |  
-| **Live-Action Film** | `1080p_film` / `4k_film` | `ABR` | Balanced for streaming |
-| **TV Broadcast** | Any appropriate profile | `CBR` | Constant bandwidth needs |
-| **Archive/Master** | Highest quality profile | `CRF` | Maximum quality retention |
+| Content Type | Recommended 1080p | Recommended 4K | Best Mode | Reasoning |
+|--------------|------------------|----------------|-----------|-----------|
+| **Modern Anime** | `1080p_anime` | `4k_anime` | `CRF`/`ABR` | Flat areas compress efficiently |
+| **Classic Anime** | `1080p_classic_anime` | `4k_classic_anime` | `CRF` | Preserve film grain |
+| **3D Animation/CGI** | `1080p_3d_animation` | `4k_3d_animation` | `CRF` | Preserve rendering detail |
+| **Live-Action Film** | `1080p_film` | `4k_film` | `ABR` | Balanced for streaming |
+| **Heavy Grain Film** | `1080p_heavygrain_film` | `4k_heavygrain_film` | `CRF` | Specialized grain preservation |
+| **Action/Sports** | `1080p_action` | `4k_action` | `ABR`/`CBR` | High-motion optimization |
+| **Clean Digital** | `1080p_clean_digital` | `4k_clean_digital` | `ABR` | Digital/upscaled content |
+| **TV Broadcast** | Any appropriate profile | Any | `CBR` | Constant bandwidth needs |
+| **Archive/Master** | Content-appropriate profile | Content-appropriate profile | `CRF` | Maximum quality retention |
 
 ## Quality & Performance Metrics
 

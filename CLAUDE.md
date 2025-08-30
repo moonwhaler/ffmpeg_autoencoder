@@ -38,14 +38,20 @@ A professional Bash script suite for automated video encoding using FFmpeg with 
 | **CBR** | Broadcast, Live | Good | Predictable | Constant |
 
 ## Encoding Profiles
-12 optimized profiles available:
-- **1080p profiles**: `1080p_anime`, `1080p_anime_hdr`, `1080p_3d_animation`, `1080p_3d_animation_hdr`, `1080p_film`, `1080p_film_hdr`
-- **4K profiles**: `4k_anime`, `4k_anime_hdr`, `4k_3d_animation`, `4k_3d_animation_hdr`, `4k_film`, `4k_film_hdr`
+18 optimized profiles available:
+- **1080p profiles**: `1080p_anime`, `1080p_classic_anime`, `1080p_3d_animation`, `1080p_film`, `1080p_heavygrain_film`, `1080p_light_grain`, `1080p_action`, `1080p_clean_digital`
+- **4K profiles**: `4k_anime`, `4k_classic_anime`, `4k_3d_animation`, `4k_film`, `4k_heavygrain_film`, `4k_mixed_detail`, `4k_light_grain`, `4k_action`, `4k_clean_digital`
+- **HDR variants**: HDR metadata is automatically added when HDR content is detected (not separate profiles)
 
 Each profile includes content-type specific optimizations:
 - **Anime**: Enhanced deblocking, animation tuning (-15% bitrate modifier, +0.5 CRF modifier)
+- **Classic Anime**: Grain preservation for film sources (+0.5 CRF modifier, higher bitrate)
 - **3D Animation**: CGI-optimized parameters (+10% bitrate modifier, -0.8 CRF modifier)  
 - **Film**: Balanced live-action optimization (baseline bitrate, 0.0 CRF modifier)
+- **Heavy Grain Film**: Specialized grain preservation (grain tuning, minimal noise reduction)
+- **Light Grain**: Moderate grain handling with selective noise reduction
+- **Action**: High-motion optimization (faster ME, motion-aware parameters)
+- **Clean Digital**: Digital/upscaled content with selective noise reduction
 
 ## Common Commands
 
@@ -99,6 +105,14 @@ Each profile includes content-type specific optimizations:
 
 # All output files automatically use UUID naming: filename_[UUID].ext
 ```
+
+### Automatic Profile Selection
+```bash
+# Automatic profile selection (requires external script)
+./ffmpeg_encoder.sh -i input.mkv -p auto -m crf
+./ffmpeg_encoder.sh -i input.mkv -p auto -m abr
+```
+**Note**: Auto selection requires `automatic_profile_selector.sh` script. If missing, falls back to filename-based selection.
 
 ### View Available Profiles and Modes
 ```bash
@@ -208,8 +222,20 @@ Scripts include sophisticated progress tracking:
 - **Best Mode**: `ABR` (streaming) or `CBR` (broadcast)
 - **Reasoning**: Balanced approach with 0.0 CRF modifier for natural content
 
+### **Profile Selection Guide**
+
+| Content Type | Recommended 1080p | Recommended 4K | Best Mode |
+|--------------|------------------|----------------|----------|
+| **Modern Anime** | `1080p_anime` | `4k_anime` | `CRF`/`ABR` |
+| **Classic Anime** | `1080p_classic_anime` | `4k_classic_anime` | `CRF` |
+| **3D Animation/CGI** | `1080p_3d_animation` | `4k_3d_animation` | `CRF` |
+| **Live-Action Film** | `1080p_film` | `4k_film` | `ABR` |
+| **Grainy Film** | `1080p_heavygrain_film` | `4k_heavygrain_film` | `CRF` |
+| **High-Motion/Action** | `1080p_action` | `4k_action` | `ABR`/`CBR` |
+| **Clean Digital** | `1080p_clean_digital` | `4k_clean_digital` | `ABR` |
+
 ### **Professional Use Cases**
-- **Archival/Master**: Use `CRF` mode with highest quality profile
+- **Archival/Master**: Use `CRF` mode with content-appropriate profile
 - **Streaming/VOD**: Use `ABR` mode for predictable file sizes
 - **Broadcast/Live**: Use `CBR` mode for constant bandwidth requirements
 
