@@ -525,6 +525,54 @@ analyze_frame_distribution() {
     echo "${frame_complexity:-4}"
 }
 
+# Fallback profile selection based on basic video properties
+select_fallback_profile() {
+    local input_video="$1"
+    
+    # Get basic video properties
+    local width=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of default=noprint_wrappers=1:nokey=1 "$input_video" 2>/dev/null || echo "1920")
+    local height=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of default=noprint_wrappers=1:nokey=1 "$input_video" 2>/dev/null || echo "1080")
+    local color_space=$(ffprobe -v error -select_streams v:0 -show_entries stream=color_space -of csv=p=0 "$input_video" 2>/dev/null)
+    local color_primaries=$(ffprobe -v error -select_streams v:0 -show_entries stream=color_primaries -of csv=p=0 "$input_video" 2>/dev/null)
+    
+    # Determine resolution category
+    local resolution_prefix="1080p"
+    if [[ $width -ge 3840 ]] && [[ $height -ge 2160 ]]; then
+        resolution_prefix="4k"
+    fi
+    
+    # Check for HDR
+    local is_hdr=false
+    if [[ "$color_space" == "bt2020nc" ]] || [[ "$color_primaries" == "bt2020" ]]; then
+        is_hdr=true
+    fi
+    
+    # Simple content detection based on filename patterns
+    local filename=$(basename "$input_video" | tr '[:upper:]' '[:lower:]')
+    local fallback_profile="${resolution_prefix}_film"
+    
+    case "$filename" in
+        *anime*|*animation*|*cartoon*)
+            fallback_profile="${resolution_prefix}_anime"
+            ;;
+        *cgi*|*3d*)
+            fallback_profile="${resolution_prefix}_3d_animation"
+            ;;
+        *action*|*sports*)
+            fallback_profile="${resolution_prefix}_action"
+            ;;
+        *classic*|*vintage*|*old*)
+            fallback_profile="${resolution_prefix}_light_grain"
+            ;;
+        *)
+            fallback_profile="${resolution_prefix}_film"
+            ;;
+    esac
+    
+    log DEBUG "Fallback selection: ${width}x${height}, HDR: $is_hdr, Profile: $fallback_profile"
+    echo "$fallback_profile"
+}
+
 # Extract HDR metadata
 extract_hdr_metadata() {
     local f=$1
@@ -568,7 +616,17 @@ perform_complexity_analysis() {
     mkdir -p "$temp_frames_dir"
     
     # Sample multiple points in the video to catch grain in different lighting conditions
-    local sample_times=("60" "120" "300" "600")  # Different timestamps
+    # Adaptive sample times based on video duration
+    local sample_times=()
+    if (( $(echo "$duration > 600" | bc -l) )); then
+        sample_times=("60" "120" "300" "600")  # Long videos
+    elif (( $(echo "$duration > 120" | bc -l) )); then
+        sample_times=("30" "60" "90" "$((duration-10))")  # Medium videos
+    elif (( $(echo "$duration > 30" | bc -l) )); then
+        sample_times=("5" "15" "$((duration/2))" "$((duration-5))")  # Short videos  
+    else
+        sample_times=("2" "5" "8")  # Very short videos
+    fi
     local total_grain=0
     local total_texture=0
     local valid_samples=0
@@ -621,8 +679,9 @@ except:
             # Combined grain metric for this sample
             local combined_grain=$(echo "scale=2; ($grain_sample * 0.4) + ($local_var * 0.1) + ($edge_variance * 0.5)" | bc -l 2>/dev/null || echo "0")
             
-            # Texture analysis (high-frequency content)
-            local texture_sample=$(ffmpeg -i "$temp_frame" -vf "format=gray,highpass=f=8:width_type=h,signalstats" -f null - 2>&1 | grep -o "YAVG:[0-9.]*" | cut -d: -f2 2>/dev/null || echo "0")
+            # Texture analysis (optimized edge content detection)  
+            local texture_sample=$(ffmpeg -i "$temp_frame" -vf "scale=320:240,format=gray,sobel" -f rawvideo -pix_fmt gray - 2>/dev/null | od -tu1 | awk 'NR>1{for(i=2;i<=NF;i++) if($i>50) count++} END{print count+0}')
+            texture_sample=$(echo "scale=1; $texture_sample / 100" | bc -l 2>/dev/null | head -1 | tr -d '\n' || echo "0")
             [[ "$texture_sample" =~ ^[0-9.]+$ ]] || texture_sample="0"
             
             # Accumulate values
@@ -1258,17 +1317,35 @@ show_help() {
     echo "  -s, --scale   Scale resolution (format: w:h)"
     echo "  -h, --help    Show this help"
     echo ""
-    echo "Content Type Recommendations:"
-    echo "  Simple 2D Anime:     1080p_anime, 4k_anime (flat colors, minimal texture)"
-    echo "  Classic 90s Anime:   1080p_classic_anime, 4k_classic_anime (film grain)"
-    echo "  3D CGI Films:        1080p_3d_animation, 4k_3d_animation (complex textures)"
-    echo "  Modern Films:        1080p_film, 4k_film (balanced live-action)"
-    echo "  Heavy Grain Films:   1080p_heavygrain_film, 4k_heavygrain_film (preservation)"
-    echo "  Light Grain:         1080p_light_grain, 4k_light_grain (moderate preservation)"
-    echo "  High-Motion:         1080p_action, 4k_action (sports, action sequences)"
-    echo "  Clean Digital:       1080p_clean_digital, 4k_clean_digital (minimal noise)"
+    echo "🤖 AUTOMATIC PROFILE SELECTION:"
+    echo "  Use -p auto to enable intelligent profile selection based on content analysis."
+    echo ""
+    echo "  The system analyzes:"
+    echo "    • Content type (anime, 3D animation, live-action film)"
+    echo "    • Grain characteristics (heavy, light, clean digital)"
+    echo "    • Motion complexity (action, standard, low-motion)"
+    echo "    • Visual complexity and edge density"
+    echo "    • HDR detection and resolution"
+    echo ""
+    echo "📚 MANUAL PROFILE SELECTION:"
+    echo "  Content Type Recommendations:"
+    echo "    Simple 2D Anime:     1080p_anime, 4k_anime (flat colors, minimal texture)"
+    echo "    Classic 90s Anime:   1080p_classic_anime, 4k_classic_anime (film grain)"
+    echo "    3D CGI Films:        1080p_3d_animation, 4k_3d_animation (complex textures)"
+    echo "    Modern Films:        1080p_film, 4k_film (balanced live-action)"
+    echo "    Heavy Grain Films:   1080p_heavygrain_film, 4k_heavygrain_film (preservation)"
+    echo "    Light Grain:         1080p_light_grain, 4k_light_grain (moderate preservation)"
+    echo "    High-Motion:         1080p_action, 4k_action (sports, action sequences)"
+    echo "    Clean Digital:       1080p_clean_digital, 4k_clean_digital (minimal noise)"
     echo ""
     echo "Examples:"
+    echo ""
+    echo "🤖 Automatic Profile Selection:"
+    echo "  $0 -i movie.mkv -p auto -m crf                               # Let AI choose best profile"
+    echo "  $0 -i anime.mp4 -p auto -m abr                               # Automatic anime detection"
+    echo "  $0 -i video.mkv -p auto -o custom_name.mkv -m cbr             # Auto with custom output"
+    echo ""
+    echo "📚 Manual Profile Selection:"
     echo "  $0 -i input.mkv -o output.mkv -p 1080p_anime -m crf           # Single-pass CRF"
     echo "  $0 -i input.mkv -p 4k_film -m abr                           # Two-pass ABR with UUID output"
     echo "  $0 -i input.mkv -o output.mkv -p 1080p_heavygrain_film -m crf # Grain preservation"
@@ -1372,6 +1449,53 @@ main() {
         log ERROR "Missing required arguments: -i INPUT -p PROFILE"
         show_help
         exit 1
+    fi
+    
+    # Handle automatic profile selection
+    if [[ "$profile" == "auto" ]]; then
+        log INFO "Automatic profile selection requested..."
+        
+        local selector_script="$(dirname "$0")/automatic_profile_selector.sh"
+        if [[ -f "$selector_script" ]]; then
+            log INFO "Running intelligent content analysis..."
+            local selected_profile
+            
+            # Use different analysis modes based on encoding mode for efficiency
+            local analysis_mode="fast"
+            case "$mode" in
+                "crf")
+                    analysis_mode="comprehensive"  # CRF benefits from thorough analysis
+                    ;;
+                "abr")
+                    analysis_mode="fast"           # ABR is more forgiving
+                    ;;
+                "cbr")
+                    analysis_mode="fast"           # CBR for broadcast doesn't need deep analysis
+                    ;;
+            esac
+            
+            # Run the selector (quiet mode for integration)
+            if selected_profile=$(bash "$selector_script" -i "$input" -m "$analysis_mode" -q 2>/dev/null); then
+                if [[ -n "$selected_profile" ]] && [[ -n "${BASE_PROFILES[$selected_profile]:-}" ]]; then
+                    profile="$selected_profile"
+                    log INFO "Automatically selected profile: $profile"
+                else
+                    log WARN "Automatic selection returned invalid profile: $selected_profile"
+                    # Fallback profile selection
+                    profile=$(select_fallback_profile "$input")
+                    log INFO "Using fallback profile: $profile"
+                fi
+            else
+                log WARN "Automatic profile selection failed"
+                # Fallback profile selection
+                profile=$(select_fallback_profile "$input")
+                log INFO "Using fallback profile: $profile"
+            fi
+        else
+            log WARN "Automatic profile selector not found, using fallback"
+            profile=$(select_fallback_profile "$input")
+            log INFO "Using fallback profile: $profile"
+        fi
     fi
     
     # Validate profile parameter
