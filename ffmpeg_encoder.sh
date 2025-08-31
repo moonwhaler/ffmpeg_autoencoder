@@ -885,8 +885,20 @@ build_filter_chain() {
     local manual_crop=$1
     local scale=$2
     local auto_crop=$3
+    local denoise=$4
     local fc=""
     
+    # Start with optional denoising filter
+    if [[ "$denoise" == "true" ]]; then
+        fc="[0:v]hqdn3d=1:1:2:2[denoised]"
+        local current_label="denoised"
+        log INFO "Pre-encode denoising enabled: hqdn3d=1:1:2:2 (light uniform grain reduction)"
+    else
+        fc="[0:v]null[v]"
+        local current_label="v"
+    fi
+    
+    # Apply cropping to the current stream
     local final_crop=""
     if [[ -n "$manual_crop" ]]; then
         final_crop="crop=$manual_crop"
@@ -897,13 +909,21 @@ build_filter_chain() {
     fi
     
     if [[ -n "$final_crop" ]]; then
-        fc="[0:v]${final_crop}[v]"
-    else
-        fc="[0:v]null[v]"
+        if [[ "$denoise" == "true" ]]; then
+            fc="${fc};[${current_label}]${final_crop}[v]"
+        else
+            fc="[0:v]${final_crop}[v]"
+        fi
+        current_label="v"
+    elif [[ "$denoise" == "true" ]]; then
+        # Rename denoised stream to 'v' for consistency
+        fc="${fc};[${current_label}]null[v]"
+        current_label="v"
     fi
     
+    # Apply scaling if specified
     if [[ -n "$scale" ]]; then
-        fc="${fc};[v]scale=$scale[v]"
+        fc="${fc};[${current_label}]scale=$scale[v]"
     fi
     
     echo "$fc"
@@ -1060,7 +1080,7 @@ log_profile_details() {
 
 # Enhanced encoding with mode support (ABR/CRF/CBR)
 run_encoding() {
-    local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6 mode=$7 use_complexity=$8
+    local in=$1 out=$2 prof=$3 title=$4 manual_crop=$5 scale=$6 mode=$7 use_complexity=$8 denoise=$9
 
     # Initialize log file
     init_log_file "$out"
@@ -1100,7 +1120,7 @@ run_encoding() {
     local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
     local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
     local x265p=$(echo "$ps" | sed 's|title=[^:]*:||;s|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|crf=[^:]*$||;s|base_bitrate=[^:]*:||;s|hdr_bitrate=[^:]*:||;s|content_type=[^:]*:||;s|^:||;s|:$||' | sed 's|:sao:|:sao=1:|g; s|:no-sao:|:sao=0:|g; s|:b-intra:|:b-intra=1:|g; s|:weightb:|:weightb=1:|g; s|:weightp:|:weightp=1:|g; s|:cutree:|:cutree=1:|g; s|:strong-intra-smoothing:|:strong-intra-smoothing=1:|g; s|^sao:|sao=1:|; s|^no-sao:|sao=0:|; s|^b-intra:|b-intra=1:|; s|^weightb:|weightb=1:|; s|^weightp:|weightp=1:|; s|^cutree:|cutree=1:|; s|^strong-intra-smoothing:|strong-intra-smoothing=1:|')
-    local fc=$(build_filter_chain "$manual_crop" "$scale" "$auto_crop" 2>/dev/null)
+    local fc=$(build_filter_chain "$manual_crop" "$scale" "$auto_crop" "$denoise" 2>/dev/null)
     local streams=$(build_stream_mapping "$in")
     local stats="$TEMP_DIR/${STATS_PREFIX}_$(basename "$in" .${in##*.}).log"
 
@@ -1379,6 +1399,7 @@ show_help() {
     echo "  -t, --title   Video title metadata"
     echo "  -c, --crop       Manual crop (format: w:h:x:y)"
     echo "  -s, --scale      Scale resolution (format: w:h)"
+    echo "  --denoise        Enable light pre-encode denoising (hqdn3d=1:1:2:2) for uniform grain"
     echo "  --use-complexity Enable complexity analysis for adaptive parameter optimization"
     echo "  --web-search     Enable web search for content validation (default: enabled)"
     echo "  --web-search-force  Force web search even with high technical confidence"
@@ -1424,12 +1445,13 @@ show_help() {
     echo "  $0 -i input.mkv -o output.mkv -p 1080p_heavygrain_film -m crf # Grain preservation"
     echo "  $0 -i input.mkv -p 1080p_classic_anime -m abr                # Classic anime with grain"
     echo "  $0 -i input.mkv -o output.mkv -p 4k_action -m cbr             # High-motion CBR"
+    echo "  $0 -i classic_film.mkv -p 1080p_film --denoise -m crf        # Light denoising for uniform grain"
     echo ""
 }
 
 # Main function
 main() {
-    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false"
+    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false" denoise="false"
 
     # Check dependencies
     for tool in ffmpeg ffprobe bc uuidgen; do
@@ -1499,6 +1521,9 @@ main() {
                 shift ;;
             --use-complexity)
                 use_complexity_analysis="true"
+                shift ;;
+            --denoise)
+                denoise="true"
                 shift ;;
             -h|--help)     
                 show_help
@@ -1617,7 +1642,7 @@ main() {
     validate_input "$input"
 
     log INFO "Starting content-adaptive encoding with auto-crop and HDR detection..."
-    run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode" "$use_complexity_analysis"
+    run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode" "$use_complexity_analysis" "$denoise"
 }
 
 # Execute script
