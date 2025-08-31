@@ -81,6 +81,10 @@ BASE_PROFILES["4k_action"]="title=4K High-Motion Action:preset=slow:crf=20:pix_f
 # Ultra-clean digital content (modern anime, digital intermediates)
 BASE_PROFILES["4k_clean_digital"]="title=4K Clean Digital Content:preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=0.8:aq-mode=3:aq-strength=0.7:deblock=1,1:rc-lookahead=60:ctu=64:rd=4:rdoq-level=2:qcomp=0.8:nr-intra=2:nr-inter=2:weightb:weightp:cutree:me=hex:subme=2:base_bitrate=7800:hdr_bitrate=9200:content_type=clean_digital"
 
+BASE_PROFILES["4k"]="title=4K:preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=1.0:aq-mode=2:aq-strength=0.9:deblock=-1,-1:rc-lookahead=40:ctu=32:rd=4:rdoq-level=2:qcomp=0.70:nr-intra=0:nr-inter=0:weightb:weightp:cutree:me=umh:subme=3:base_bitrate=12000:hdr_bitrate=15000:content_type=mixed"
+BASE_PROFILES["4k_heavy_grain"]="title=4K Heavy Grain Film Optimized:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:selective-sao=2:deblock=-1,-1:aq-mode=3:psy-rd=1.0:psy-rdoq=0.8:rskip=2:rskip-edge-threshold=2:bframes=5:b-adapt=2:ref=6:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:vbv-maxrate=25000:vbv-bufsize=50000:nr-intra=25:nr-inter=100:keyint=240:min-keyint=24:me=umh:subme=7:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=mixed"
+
+
 # Progress bar functions
 show_progress() {
     local current=$1
@@ -939,7 +943,7 @@ parse_base_profile() {
     
     # Extract base values from profile
     local base_bitrate=$(echo "$str" | grep -o 'base_bitrate=[^:]*' | cut -d= -f2)
-    local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | cut -d= -f2)
+    local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
     
     # Build final profile string with base parameters (remove metadata fields)
     local final_profile=$(echo "$str" | sed -E 's/(base_bitrate|hdr_bitrate|content_type)=[^:]*:?//g')
@@ -963,7 +967,7 @@ parse_and_adapt_profile() {
     # Extract base values
     local base_bitrate=$(echo "$str" | grep -o 'base_bitrate=[^:]*' | cut -d= -f2)
     local hdr_bitrate=$(echo "$str" | grep -o 'hdr_bitrate=[^:]*' | cut -d= -f2)
-    local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | cut -d= -f2)
+    local base_crf=$(echo "$str" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
     local content_type=$(echo "$str" | grep -o 'content_type=[^:]*' | cut -d= -f2)
     
     # Enhanced content type detection based on complexity analysis
@@ -1094,8 +1098,8 @@ run_encoding() {
     local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
     local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
     local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
-    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | cut -d= -f2)
-    local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
+    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
+    local x265p=$(echo "$ps" | sed 's|title=[^:]*:||;s|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|crf=[^:]*$||;s|base_bitrate=[^:]*:||;s|hdr_bitrate=[^:]*:||;s|content_type=[^:]*:||;s|^:||;s|:$||' | sed 's|:sao:|:sao=1:|g; s|:no-sao:|:sao=0:|g; s|:b-intra:|:b-intra=1:|g; s|:weightb:|:weightb=1:|g; s|:weightp:|:weightp=1:|g; s|:cutree:|:cutree=1:|g; s|:strong-intra-smoothing:|:strong-intra-smoothing=1:|g; s|^sao:|sao=1:|; s|^no-sao:|sao=0:|; s|^b-intra:|b-intra=1:|; s|^weightb:|weightb=1:|; s|^weightp:|weightp=1:|; s|^cutree:|cutree=1:|; s|^strong-intra-smoothing:|strong-intra-smoothing=1:|')
     local fc=$(build_filter_chain "$manual_crop" "$scale" "$auto_crop" 2>/dev/null)
     local streams=$(build_stream_mapping "$in")
     local stats="$TEMP_DIR/${STATS_PREFIX}_$(basename "$in" .${in##*.}).log"
@@ -1143,8 +1147,8 @@ run_crf_encoding() {
     local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
     local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
     local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
-    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | cut -d= -f2)
-    local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
+    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
+    local x265p=$(echo "$ps" | sed 's|title=[^:]*:||;s|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|crf=[^:]*$||;s|base_bitrate=[^:]*:||;s|hdr_bitrate=[^:]*:||;s|content_type=[^:]*:||;s|^:||;s|:$||' | sed 's|:sao:|:sao=1:|g; s|:no-sao:|:sao=0:|g; s|:b-intra:|:b-intra=1:|g; s|:weightb:|:weightb=1:|g; s|:weightp:|:weightp=1:|g; s|:cutree:|:cutree=1:|g; s|:strong-intra-smoothing:|:strong-intra-smoothing=1:|g; s|^sao:|sao=1:|; s|^no-sao:|sao=0:|; s|^b-intra:|b-intra=1:|; s|^weightb:|weightb=1:|; s|^weightp:|weightp=1:|; s|^cutree:|cutree=1:|; s|^strong-intra-smoothing:|strong-intra-smoothing=1:|')
     
     log INFO "Starting single-pass CRF encoding (Pure VBR)..."
     
@@ -1191,8 +1195,8 @@ run_cbr_encoding() {
     local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
     local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
     local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
-    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | cut -d= -f2)
-    local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
+    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
+    local x265p=$(echo "$ps" | sed 's|title=[^:]*:||;s|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|crf=[^:]*$||;s|base_bitrate=[^:]*:||;s|hdr_bitrate=[^:]*:||;s|content_type=[^:]*:||;s|^:||;s|:$||' | sed 's|:sao:|:sao=1:|g; s|:no-sao:|:sao=0:|g; s|:b-intra:|:b-intra=1:|g; s|:weightb:|:weightb=1:|g; s|:weightp:|:weightp=1:|g; s|:cutree:|:cutree=1:|g; s|:strong-intra-smoothing:|:strong-intra-smoothing=1:|g; s|^sao:|sao=1:|; s|^no-sao:|sao=0:|; s|^b-intra:|b-intra=1:|; s|^weightb:|weightb=1:|; s|^weightp:|weightp=1:|; s|^cutree:|cutree=1:|; s|^strong-intra-smoothing:|strong-intra-smoothing=1:|')
     
     # Calculate CBR buffer constraints
     local bitrate_value=$(echo "$bitrate" | sed 's/k$//')
@@ -1268,11 +1272,16 @@ run_cbr_encoding() {
 run_abr_encoding() {
     local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 bitrate=$8 stats=$9
     
+    # Ensure bitrate has 'k' suffix for FFmpeg
+    if [[ "$bitrate" =~ ^[0-9]+$ ]]; then
+        bitrate="${bitrate}k"
+    fi
+    
     local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
     local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
     local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
-    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | cut -d= -f2)
-    local x265p=$(echo "$ps" | sed 's|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|^:||;s|:$||')
+    local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
+    local x265p=$(echo "$ps" | sed 's|title=[^:]*:||;s|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|crf=[^:]*$||;s|base_bitrate=[^:]*:||;s|hdr_bitrate=[^:]*:||;s|content_type=[^:]*:||;s|^:||;s|:$||' | sed 's|:sao:|:sao=1:|g; s|:no-sao:|:sao=0:|g; s|:b-intra:|:b-intra=1:|g; s|:weightb:|:weightb=1:|g; s|:weightp:|:weightp=1:|g; s|:cutree:|:cutree=1:|g; s|:strong-intra-smoothing:|:strong-intra-smoothing=1:|g; s|^sao:|sao=1:|; s|^no-sao:|sao=0:|; s|^b-intra:|b-intra=1:|; s|^weightb:|weightb=1:|; s|^weightp:|weightp=1:|; s|^cutree:|cutree=1:|; s|^strong-intra-smoothing:|strong-intra-smoothing=1:|')
     
     log INFO "Starting two-pass ABR encoding (Average Bitrate)..."
     
