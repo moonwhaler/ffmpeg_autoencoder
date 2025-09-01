@@ -81,12 +81,12 @@ BASE_PROFILES["4k_action"]="title=4K High-Motion Action:preset=slow:crf=20:pix_f
 # Ultra-clean digital content (modern anime, digital intermediates)
 BASE_PROFILES["4k_clean_digital"]="title=4K Clean Digital Content:preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:b-adapt=2:ref=4:psy-rd=1.0:psy-rdoq=0.8:aq-mode=3:aq-strength=0.7:deblock=1,1:rc-lookahead=60:ctu=64:rd=4:rdoq-level=2:qcomp=0.8:nr-intra=2:nr-inter=2:weightb:weightp:cutree:me=hex:subme=2:base_bitrate=7800:hdr_bitrate=9200:content_type=clean_digital"
 
-BASE_PROFILES["4k"]="title=4K general preset:preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=1.0:aq-mode=2:aq-strength=0.9:deblock=-1,-1:rc-lookahead=40:ctu=32:rd=4:rdoq-level=2:qcomp=0.70:nr-intra=0:nr-inter=0:weightb:weightp:cutree:me=umh:subme=3:base_bitrate=12000:hdr_bitrate=15000:content_type=mixed"
-BASE_PROFILES["4k_heavy_grain"]="title=4K Heavy Grain Film Optimized:preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:selective-sao=2:deblock=-1,-1:aq-mode=3:psy-rd=0.8:psy-rdoq=1.0:rskip=2:rskip-edge-threshold=2:bframes=5:b-adapt=2:ref=6:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:vbv-maxrate=25000:vbv-bufsize=50000:nr-intra=25:nr-inter=100:keyint=240:min-keyint=24:me=umh:subme=7:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=heavy_grain"
-BASE_PROFILES["3d_cgi"]="title=3D CGI (Pixar-like):preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:limit-sao=1:deblock=1,1:aq-mode=3:aq-strength=0.9:psy-rd=1.6:psy-rdoq=1.5:rskip=2:rskip-edge-threshold=2:bframes=8:b-adapt=2:ref=5:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:weightb:weightp:cutree:vbv-maxrate=25000:vbv-bufsize=50000:nr-intra=25:nr-inter=100:keyint=240:min-keyint=24:me=umh:subme=7:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=3d_animation"
-BASE_PROFILES["3d_complex"]="title=3D complex content (Arcane-like):preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:no-sao:deblock=1,1:aq-mode=3:aq-strength=1.0:psy-rd=2.0:psy-rdoq=2.5:rskip=2:rskip-edge-threshold=2:bframes=8:b-adapt=2:ref=6:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:weightb:weightp:cutree:vbv-maxrate=25000:vbv-bufsize=50000:nr-intra=0:nr-inter=0:keyint=240:min-keyint=24:me=hex:subme=6:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=3d_animation"
-BASE_PROFILES["anime"]="title=Anime with more movement:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:limit-sao=1:deblock=1,1:aq-mode=3:aq-strength=0.8:psy-rd=1.1:psy-rdoq=1.0:rskip=2:rskip-edge-threshold=2:bframes=5:b-adapt=2:ref=6:rc-lookahead=80:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:vbv-maxrate=25000:vbv-bufsize=50000:nr-intra=25:nr-inter=100:keyint=240:min-keyint=24:me=hex:subme=6:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=anime"
-BASE_PROFILES["classic_anime"]="title=Classic 90s Anime with a bit of grain:preset=slow:crf=19:pix_fmt=yuv420p10le:profile=main10:limit-sao=1:deblock=0,0:aq-mode=3:aq-strength=0.8:psy-rd=0.9:psy-rdoq=1.0:rskip=2:rskip-edge-threshold=2:bframes=5:b-adapt=2:ref=6:rc-lookahead=50:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:vbv-maxrate=25000:vbv-bufsize=50000:nr-intra=25:nr-inter=100:keyint=240:min-keyint=24:me=hex:subme=6:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=classic_anime"
+BASE_PROFILES["4k"]="title=4K general preset:preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:no-sao:bframes=8:b-adapt=2:ref=4:psy-rd=1.5:psy-rdoq=1.0:aq-mode=2:aq-strength=0.9:deblock=-1,-1:rc-lookahead=40:ctu=32:rd=4:rdoq-level=2:qcomp=0.70:weightb:weightp:cutree:me=umh:subme=3:base_bitrate=12000:hdr_bitrate=15000:content_type=mixed"
+BASE_PROFILES["4k_heavy_grain"]="title=4K heavy grain (consider using --denoise):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:selective-sao=2:deblock=-1,-1:aq-mode=3:psy-rd=0.8:psy-rdoq=1.0:rskip=2:rskip-edge-threshold=2:bframes=5:b-adapt=2:ref=6:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:vbv-maxrate=12000:vbv-bufsize=20000keyint=240:min-keyint=24:me=umh:subme=7:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=heavy_grain"
+BASE_PROFILES["3d_cgi"]="title=3D CGI (Pixar-like):preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:limit-sao=1:deblock=1,1:aq-mode=3:aq-strength=0.9:psy-rd=1.6:psy-rdoq=1.5:rskip=2:rskip-edge-threshold=2:bframes=8:b-adapt=2:ref=5:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:weightb:weightp:cutree:vbv-maxrate=12000:vbv-bufsize=22000:keyint=240:min-keyint=24:me=umh:subme=7:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=3d_animation"
+BASE_PROFILES["3d_complex"]="title=3D complex content (Arcane-like):preset=slow:crf=20:pix_fmt=yuv420p10le:profile=main10:no-sao:deblock=1,1:aq-mode=3:aq-strength=1.0:psy-rd=2.0:psy-rdoq=2.5:rskip=2:rskip-edge-threshold=2:bframes=8:b-adapt=2:ref=6:rc-lookahead=60:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:weightb:weightp:cutree:vbv-maxrate=25000:vbv-bufsize=50000:keyint=240:min-keyint=24:me=hex:subme=6:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=3d_animation"
+BASE_PROFILES["anime"]="title=Anime:preset=slow:crf=22:pix_fmt=yuv420p10le:profile=main10:limit-sao=1:deblock=1,1:aq-mode=3:aq-strength=0.8:psy-rd=1.1:psy-rdoq=1.0:rskip=2:rskip-edge-threshold=2:bframes=5:b-adapt=2:ref=6:rc-lookahead=80:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:vbv-maxrate=10000:vbv-bufsize=18000:keyint=240:min-keyint=24:me=hex:subme=6:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=anime"
+BASE_PROFILES["classic_anime"]="title=Classic 90s Anime with finer details:preset=slow:crf=21:pix_fmt=yuv420p10le:profile=main10:limit-sao=1:deblock=0,0:aq-mode=3:aq-strength=0.8:psy-rd=0.9:psy-rdoq=1.0:rskip=2:rskip-edge-threshold=2:bframes=5:b-adapt=2:ref=6:rc-lookahead=50:ctu=32:rd=4:rdoq-level=2:qcomp=0.75:vbv-maxrate=10000:vbv-bufsize=18000:keyint=240:min-keyint=24:me=hex:subme=5:merange=57:base_bitrate=12000:hdr_bitrate=15000:content_type=classic_anime"
 
 
 # Progress bar functions
@@ -890,13 +890,21 @@ build_filter_chain() {
     local scale=$2
     local auto_crop=$3
     local denoise=$4
+    local hardware_accel=$5
     local fc=""
     
     # Start with optional denoising filter
     if [[ "$denoise" == "true" ]]; then
-        fc="[0:v]hqdn3d=1:1:2:2[denoised]"
+        if [[ "$hardware_accel" == "true" ]]; then
+            # For CUDA: attempt hwaccel decode -> hwdownload -> CPU hqdn3d
+            # Note: CUDA decode may fail on some content, falls back to software decode
+            fc="[0:v]hwdownload,hqdn3d=luma_spatial=1:chroma_spatial=1:luma_tmp=2:chroma_tmp=2[denoised]"
+            log INFO "Pre-encode hardware-accelerated denoising enabled (CUDA decode -> hqdn3d)"
+        else
+            fc="[0:v]hqdn3d=1:1:2:2[denoised]"
+            log INFO "Pre-encode denoising enabled: hqdn3d=1:1:2:2 (light uniform grain reduction)"
+        fi
         local current_label="denoised"
-        log INFO "Pre-encode denoising enabled: hqdn3d=1:1:2:2 (light uniform grain reduction)"
     else
         fc="[0:v]null[v]"
         local current_label="v"
@@ -929,6 +937,8 @@ build_filter_chain() {
     if [[ -n "$scale" ]]; then
         fc="${fc};[${current_label}]scale=$scale[v]"
     fi
+    
+    # No additional hwdownload needed - already handled in denoising section
     
     echo "$fc"
 }
@@ -1124,7 +1134,7 @@ run_encoding() {
     local preset=$(echo "$ps"       | grep -o 'preset=[^:]*'   | cut -d= -f2)
     local crf=$(echo "$ps" | grep -o 'crf=[^:]*' | head -1 | cut -d= -f2)
     local x265p=$(echo "$ps" | sed 's|title=[^:]*:||;s|preset=[^:]*:||;s|bitrate=[^:]*:||;s|pix_fmt=[^:]*:||;s|profile=[^:]*:||;s|crf=[^:]*:||;s|crf=[^:]*$||;s|base_bitrate=[^:]*:||;s|hdr_bitrate=[^:]*:||;s|content_type=[^:]*:||;s|^:||;s|:$||' | sed 's|:sao:|:sao=1:|g; s|:no-sao:|:sao=0:|g; s|:b-intra:|:b-intra=1:|g; s|:weightb:|:weightb=1:|g; s|:weightp:|:weightp=1:|g; s|:cutree:|:cutree=1:|g; s|:strong-intra-smoothing:|:strong-intra-smoothing=1:|g; s|^sao:|sao=1:|; s|^no-sao:|sao=0:|; s|^b-intra:|b-intra=1:|; s|^weightb:|weightb=1:|; s|^weightp:|weightp=1:|; s|^cutree:|cutree=1:|; s|^strong-intra-smoothing:|strong-intra-smoothing=1:|')
-    local fc=$(build_filter_chain "$manual_crop" "$scale" "$auto_crop" "$denoise" 2>/dev/null)
+    local fc=$(build_filter_chain "$manual_crop" "$scale" "$auto_crop" "$denoise" "$hardware_accel")
     local streams=$(build_stream_mapping "$in")
     local stats="$TEMP_DIR/${STATS_PREFIX}_$(basename "$in" .${in##*.}).log"
 
@@ -1133,13 +1143,13 @@ run_encoding() {
     # Execute encoding based on mode
     case $mode in
         "crf")
-            run_crf_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration"
+            run_crf_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$hardware_accel"
             ;;
         "cbr")
-            run_cbr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats"
+            run_cbr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats" "$hardware_accel"
             ;;
         "abr"|*)
-            run_abr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats"
+            run_abr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats" "$hardware_accel"
             ;;
     esac
     
@@ -1165,7 +1175,7 @@ run_encoding() {
 
 # Single-pass CRF encoding (Pure VBR)
 run_crf_encoding() {
-    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7
+    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 hardware_accel=$8
     
     local bitrate=$(echo "$ps" | grep -o 'bitrate=[^:]*' | cut -d= -f2)
     local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
@@ -1191,7 +1201,14 @@ run_crf_encoding() {
     fi
     
     # Single-pass CRF command (remove bitrate completely)
-    local cmd=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    local cmd=(ffmpeg -y)
+    # Add CUDA hardware acceleration if enabled
+    # Note: If CUDA fails, ffmpeg will automatically fallback to software decode
+    if [[ "$hardware_accel" == "true" ]]; then
+        cmd+=(-hwaccel cuda -hwaccel_output_format cuda)
+        log INFO "CUDA hardware acceleration enabled (will fallback to software if needed)"
+    fi
+    cmd+=(-i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd+=(-metadata title="$title")
     [[ -n $fc ]] && cmd+=(-filter_complex "$fc" -map "[v]") || cmd+=(-map 0:v:0)
     cmd+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
@@ -1214,7 +1231,7 @@ run_crf_encoding() {
 
 # Two-pass CBR encoding
 run_cbr_encoding() {
-    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 bitrate=$8 stats=$9
+    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 bitrate=$8 stats=$9 hardware_accel=${10}
     
     local pix_fmt=$(echo "$ps"  | grep -o 'pix_fmt=[^:]*'  | cut -d= -f2)
     local profile_codec=$(echo "$ps" | grep -o 'profile=[^:]*'  | cut -d= -f2)
@@ -1248,7 +1265,12 @@ run_cbr_encoding() {
     fi
 
     # First pass with progress
-    local cmd1=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    local cmd1=(ffmpeg -y)
+    # Add CUDA hardware acceleration if enabled
+    if [[ "$hardware_accel" == "true" ]]; then
+        cmd1+=(-hwaccel cuda -hwaccel_output_format cuda)
+    fi
+    cmd1+=(-i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd1+=(-metadata title="$title")
     [[ -n $fc ]] && cmd1+=(-filter_complex "$fc" -map "[v]") || cmd1+=(-map 0:v:0)
     cmd1+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
@@ -1268,7 +1290,12 @@ run_cbr_encoding() {
     }
 
     # Second pass with progress
-    local cmd2=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    local cmd2=(ffmpeg -y)
+    # Add CUDA hardware acceleration if enabled
+    if [[ "$hardware_accel" == "true" ]]; then
+        cmd2+=(-hwaccel cuda -hwaccel_output_format cuda)
+    fi
+    cmd2+=(-i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd2+=(-metadata title="$title")
     [[ -n $fc ]] && cmd2+=(-filter_complex "$fc" -map "[v]") || cmd2+=(-map 0:v:0)
     cmd2+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
@@ -1294,7 +1321,7 @@ run_cbr_encoding() {
 
 # Two-pass ABR encoding (current behavior)
 run_abr_encoding() {
-    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 bitrate=$8 stats=$9
+    local in=$1 out=$2 ps=$3 title=$4 fc=$5 streams=$6 input_duration=$7 bitrate=$8 stats=$9 hardware_accel=${10}
     
     # Ensure bitrate has 'k' suffix for FFmpeg
     if [[ "$bitrate" =~ ^[0-9]+$ ]]; then
@@ -1322,7 +1349,12 @@ run_abr_encoding() {
         echo "" >> "$LOG_FILE"
     fi
 
-    local cmd1=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    local cmd1=(ffmpeg -y)
+    # Add CUDA hardware acceleration if enabled
+    if [[ "$hardware_accel" == "true" ]]; then
+        cmd1+=(-hwaccel cuda -hwaccel_output_format cuda)
+    fi
+    cmd1+=(-i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd1+=(-metadata title="$title")
     [[ -n $fc ]] && cmd1+=(-filter_complex "$fc" -map "[v]") || cmd1+=(-map 0:v:0)
     cmd1+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
@@ -1341,7 +1373,12 @@ run_abr_encoding() {
     }
 
     # Second pass with progress
-    local cmd2=(ffmpeg -y -i "$in" -max_muxing_queue_size 1024)
+    local cmd2=(ffmpeg -y)
+    # Add CUDA hardware acceleration if enabled
+    if [[ "$hardware_accel" == "true" ]]; then
+        cmd2+=(-hwaccel cuda -hwaccel_output_format cuda)
+    fi
+    cmd2+=(-i "$in" -max_muxing_queue_size 1024)
     [[ -n $title ]] && cmd2+=(-metadata title="$title")
     [[ -n $fc ]] && cmd2+=(-filter_complex "$fc" -map "[v]") || cmd2+=(-map 0:v:0)
     cmd2+=(-c:v libx265 -pix_fmt "$pix_fmt" -profile:v "$profile_codec")
@@ -1404,6 +1441,7 @@ show_help() {
     echo "  -c, --crop       Manual crop (format: w:h:x:y)"
     echo "  -s, --scale      Scale resolution (format: w:h)"
     echo "  --denoise        Enable light pre-encode denoising (hqdn3d=1:1:2:2) for uniform grain"
+    echo "  --hardware       Use CUDA hardware acceleration for decode + hqdn3d filter (may fallback to software)"
     echo "  --use-complexity Enable complexity analysis for adaptive parameter optimization"
     echo "  --web-search     Enable web search for content validation (default: enabled)"
     echo "  --web-search-force  Force web search even with high technical confidence"
@@ -1450,12 +1488,13 @@ show_help() {
     echo "  $0 -i input.mkv -p 1080p_classic_anime -m abr                # Classic anime with grain"
     echo "  $0 -i input.mkv -o output.mkv -p 4k_action -m cbr             # High-motion CBR"
     echo "  $0 -i classic_film.mkv -p 1080p_film --denoise -m crf        # Light denoising for uniform grain"
+    echo "  $0 -i input.mkv -p 1080p_film --denoise --hardware -m crf    # Hardware accelerated decode + denoising"
     echo ""
 }
 
 # Main function
 main() {
-    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false" denoise="false"
+    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false" denoise="false" hardware_accel="false"
 
     # Check dependencies
     for tool in ffmpeg ffprobe bc uuidgen; do
@@ -1528,6 +1567,9 @@ main() {
                 shift ;;
             --denoise)
                 denoise="true"
+                shift ;;
+            --hardware)
+                hardware_accel="true"
                 shift ;;
             -h|--help)     
                 show_help
