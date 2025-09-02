@@ -294,13 +294,15 @@ format_duration() {
 show_enhanced_progress() {
     local description="$1"
     local current_progress="$2"
-    local fps="$3"
-    local eta="$4"
-    local method="$5"
-    local frame="$6"
+    local eta="$3"
     
     local percent
     percent=$(bc -l <<< "scale=1; $current_progress * 100" 2>/dev/null || echo "0.0")
+    
+    # Ensure percent is not empty and is a valid number
+    if [[ -z "$percent" ]] || ! [[ "$percent" =~ ^[0-9]*\.?[0-9]*$ ]]; then
+        percent="0.0"
+    fi
     
     local eta_formatted
     if [[ $eta -gt 0 ]]; then
@@ -314,6 +316,11 @@ show_enhanced_progress() {
     local filled_length
     filled_length=$(bc -l <<< "scale=0; $bar_length * $current_progress / 1" 2>/dev/null || echo "0")
     
+    # Ensure filled_length is not empty and is a valid number
+    if [[ -z "$filled_length" ]] || ! [[ "$filled_length" =~ ^[0-9]+$ ]]; then
+        filled_length=0
+    fi
+    
     local progress_bar=""
     for ((i=1; i<=filled_length; i++)); do
         progress_bar+="#"
@@ -322,11 +329,6 @@ show_enhanced_progress() {
         progress_bar+=" "
     done
     
-    # Format frame info
-    local frame_info=""
-    if [[ "$method" == "frame" ]] && [[ $frame -gt 0 ]]; then
-        frame_info=" | Frame: $frame"
-    fi
     
     # Print progress line with proper formatting
     # Convert percent to integer for printf compatibility
@@ -334,15 +336,20 @@ show_enhanced_progress() {
     local percent_dec=${percent#*.}
     if [[ "$percent_dec" == "$percent" ]] || [[ -z "$percent_dec" ]]; then percent_dec="0"; fi
     
-    printf "\r\033[K%s: [%s] %3d.%01d%% | FPS: %5s | ETA: %11s | Method: %s%s" \
+    # Ensure both values are valid numbers for printf
+    if [[ -z "$percent_int" ]] || ! [[ "$percent_int" =~ ^[0-9]+$ ]]; then
+        percent_int=0
+    fi
+    if [[ -z "$percent_dec" ]] || ! [[ "$percent_dec" =~ ^[0-9]+$ ]]; then
+        percent_dec=0
+    fi
+    
+    printf "\r\033[K%s: [%s] %3d.%01d%% | ETA: %11s" \
            "$description" \
            "$progress_bar" \
            "$percent_int" \
            "${percent_dec:0:1}" \
-           "${fps:-N/A}" \
-           "$eta_formatted" \
-           "$method" \
-           "$frame_info"
+           "$eta_formatted"
 }
 
 # Enhanced FFmpeg with robust real-time progress tracking
@@ -426,8 +433,8 @@ run_ffmpeg_with_progress() {
         eta=$(calculate_eta "$current_progress" "$elapsed_time" "$fps" "$total_frames" "$speed")
         
         # Update progress display
-        if [[ "$method" != "unknown" ]] && [[ -n "$current_progress" ]] && [[ "$current_progress" != "0" ]]; then
-            show_enhanced_progress "$description" "$current_progress" "$fps" "$eta" "$method" "$frame"
+        if [[ "$method" != "unknown" ]] && [[ -n "$current_progress" ]] && (( $(echo "$current_progress >= 0" | bc -l 2>/dev/null || echo 0) )); then
+            show_enhanced_progress "$description" "$current_progress" "$eta"
         else
             # Fallback to simple spinner for early stages
             printf "\r\033[K%s: Processing... [%ds elapsed]" "$description" "$elapsed_time"
@@ -441,7 +448,7 @@ run_ffmpeg_with_progress() {
     
     # Final progress display
     if [[ $exit_code -eq 0 ]]; then
-        show_enhanced_progress "$description" "1" "${fps:-N/A}" "0" "completed" "$frame"
+        show_enhanced_progress "$description" "1" "0"
     fi
     printf "\n"
     
