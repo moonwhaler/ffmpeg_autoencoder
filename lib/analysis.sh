@@ -22,7 +22,7 @@ detect_crop_values() {
     
     # HDR detection for adaptive crop limits  
     local is_hdr=$(extract_hdr_metadata "$input")
-    local crop_limit=16
+    local crop_limit=24  # Increased from 16 to catch more vertical bars
     if [[ "$is_hdr" == "true" ]]; then
         crop_limit=64  # Higher threshold for HDR content as black bars are not pure black
         log CROP "HDR content detected - using adjusted crop limit: $crop_limit"
