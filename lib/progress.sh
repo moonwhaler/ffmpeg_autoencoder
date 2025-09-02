@@ -397,7 +397,7 @@ show_enhanced_progress() {
         size_display="calculating..."
     fi
     
-    printf "\r\033[K%s: [%s] %3d.%01d%% | ETA: %11s | Estimated size: %12s" \
+    printf "\r\033[K%s: [%s] %3d.%01d%% | ETA: %s | Estimated size: %s" \
            "$description" \
            "$progress_bar" \
            "$percent_int" \
