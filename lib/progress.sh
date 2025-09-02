@@ -169,9 +169,23 @@ parse_ffmpeg_progress() {
     fi
     
     # Use tail with multiple lines to be more robust against partial writes
-    progress_data=$(tail -n 10 "$progress_file" 2>/dev/null | grep -E "(out_time_us|frame|fps|speed)=" | tail -n 6)
+    progress_data=$(tail -n 20 "$progress_file" 2>/dev/null | grep -E "(out_time_us|frame|fps|speed)=" | tail -n 10)
     
+    # If no progress data found, check if file has any content at all
     if [[ -z "$progress_data" ]]; then
+        local file_content
+        file_content=$(tail -n 5 "$progress_file" 2>/dev/null)
+        if [[ -n "$file_content" ]]; then
+            # File has content but no recognized progress fields - FFmpeg might be using different format
+            # Try to extract any numeric progress information
+            local any_frame any_time
+            any_frame=$(echo "$file_content" | grep -o '[0-9]\+' | tail -n 1)
+            any_time=$(echo "$file_content" | grep -o '[0-9]\+\.[0-9]\+' | tail -n 1)
+            if [[ -n "$any_frame" || -n "$any_time" ]]; then
+                echo "parsing:0.001:0:${any_frame:-0}:1"  # Minimal progress to prevent stall
+                return
+            fi
+        fi
         echo "unknown:0:0:0:0"
         return
     fi
@@ -241,9 +255,13 @@ calculate_eta() {
     if [[ "$fps" =~ ^[0-9.]+$ ]] && (( $(echo "$fps > 0" | bc -l) )) && [[ $total_frames -gt 0 ]] && (( $(echo "$current_progress > 0" | bc -l) )); then
         local remaining_frames
         remaining_frames=$(bc -l <<< "scale=0; $total_frames * (1 - $current_progress)" 2>/dev/null || echo "0")
+        # Convert to integer for bash comparison
+        remaining_frames=${remaining_frames%.*}
         if [[ $remaining_frames -gt 0 ]]; then
             local eta_frame
             eta_frame=$(bc -l <<< "scale=0; $remaining_frames / $fps" 2>/dev/null || echo "0")
+            # Convert to integer for bash comparison
+            eta_frame=${eta_frame%.*}
             
             # Use frame-based ETA if it seems reasonable and differs significantly from progress-based
             if [[ $eta_frame -gt 0 ]] && [[ $eta_frame -lt $((eta_estimate * 2)) || $eta_estimate -eq 0 ]]; then
@@ -256,6 +274,8 @@ calculate_eta() {
     if [[ "$speed" =~ ^[0-9.]+$ ]] && (( $(echo "$speed > 0" | bc -l) )) && [[ $eta_estimate -gt 0 ]]; then
         local eta_speed_adjusted
         eta_speed_adjusted=$(bc -l <<< "scale=0; $eta_estimate / $speed" 2>/dev/null || echo "$eta_estimate")
+        # Convert to integer for bash comparison
+        eta_speed_adjusted=${eta_speed_adjusted%.*}
         if [[ $eta_speed_adjusted -gt 0 ]]; then
             eta_estimate="$eta_speed_adjusted"
         fi
@@ -431,9 +451,10 @@ run_ffmpeg_with_progress() {
     local progress_file="${TEMP_DIR}/ffmpeg_progress_$$.txt"
     local stderr_file="${TEMP_DIR}/ffmpeg_stderr_$$.txt"
     
-    # Extend FFmpeg command with progress output
+    # Extend FFmpeg command with enhanced progress output
     local ffmpeg_cmd=("${cmd[@]}")
-    ffmpeg_cmd+=(-progress "$progress_file" -nostats)
+    # Force frequent progress updates and disable internal progress throttling
+    ffmpeg_cmd+=(-progress "$progress_file" -nostats -stats_period 0.5 -fflags +flush_packets)
     
     # Start FFmpeg in background
     "${ffmpeg_cmd[@]}" 2>"$stderr_file" &
@@ -441,6 +462,7 @@ run_ffmpeg_with_progress() {
     
     # Progress tracking variables
     local last_progress=0
+    local last_file_size=0
     local stall_count=0
     local start_time
     start_time=$(date +%s)
@@ -472,11 +494,12 @@ run_ffmpeg_with_progress() {
             current_file_size="0B"
         fi
         
-        # Handle stalled progress
+        # Handle stalled progress - check both progress and file size changes
         if [[ "$method" != "unknown" ]]; then
-            if [[ "$current_progress" == "$last_progress" ]]; then
+            local current_size_bytes=${size_bytes:-0}
+            if [[ "$current_progress" == "$last_progress" ]] && [[ "$current_size_bytes" == "$last_file_size" ]]; then
                 ((stall_count++))
-                if [[ $stall_count -gt $((10 / update_interval)) ]]; then  # ~10 seconds of stall
+                if [[ $stall_count -gt $((15 / update_interval)) ]]; then  # ~15 seconds of complete stall
                     # Just check if process is still running, no warning message
                     if ! kill -0 "$pid" 2>/dev/null; then
                         break
@@ -484,7 +507,7 @@ run_ffmpeg_with_progress() {
                     stall_count=0  # Reset and continue
                 fi
             else
-                stall_count=0
+                stall_count=0  # Reset if either progress or file size changed
             fi
         fi
         
@@ -501,6 +524,7 @@ run_ffmpeg_with_progress() {
         fi
         
         last_progress="$current_progress"
+        last_file_size="${size_bytes:-0}"
     done
     
     wait "$pid"
