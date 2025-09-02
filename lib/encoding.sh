@@ -54,13 +54,13 @@ run_encoding() {
     # Execute encoding based on mode
     case $mode in
         "crf")
-            run_crf_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$hardware_accel" "$prof" "$mode"
+            run_crf_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$hardware_accel" "$prof" "$mode" || return 1
             ;;
         "cbr")
-            run_cbr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats" "$hardware_accel" "$prof" "$mode"
+            run_cbr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats" "$hardware_accel" "$prof" "$mode" || return 1
             ;;
         "abr"|*)
-            run_abr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats" "$hardware_accel" "$prof" "$mode"
+            run_abr_encoding "$in" "$out" "$ps" "$title" "$fc" "$streams" "$input_duration" "$bitrate" "$stats" "$hardware_accel" "$prof" "$mode" || return 1
             ;;
     esac
     
@@ -136,7 +136,7 @@ run_crf_encoding() {
     fi
     
     run_ffmpeg_with_progress "CRF Encoding (Single Pass)" "$input_duration" "$profile_name" "$encoding_mode" "${cmd[@]}" || { 
-        log ERROR "CRF encoding failed"; exit 1; 
+        log ERROR "CRF encoding failed"; return 1; 
     }
 }
 
@@ -197,7 +197,7 @@ run_cbr_encoding() {
     fi
     
     run_ffmpeg_with_progress "CBR First Pass (Analysis)" "$input_duration" "$profile_name" "$encoding_mode" "${cmd1[@]}" || { 
-        log ERROR "CBR first pass failed"; exit 1; 
+        log ERROR "CBR first pass failed"; return 1; 
     }
 
     # Second pass with progress
@@ -223,7 +223,7 @@ run_cbr_encoding() {
     fi
     
     run_ffmpeg_with_progress "CBR Second Pass (Final Encoding)" "$input_duration" "$profile_name" "$encoding_mode" "${cmd2[@]}" || { 
-        log ERROR "CBR second pass failed"; exit 1; 
+        log ERROR "CBR second pass failed"; return 1; 
     }
     
     # Cleanup stats
@@ -280,7 +280,7 @@ run_abr_encoding() {
     fi
     
     run_ffmpeg_with_progress "ABR First Pass (Analysis)" "$input_duration" "$profile_name" "$encoding_mode" "${cmd1[@]}" || { 
-        log ERROR "ABR first pass failed"; exit 1; 
+        log ERROR "ABR first pass failed"; return 1; 
     }
 
     # Second pass with progress
@@ -305,7 +305,7 @@ run_abr_encoding() {
     fi
     
     run_ffmpeg_with_progress "ABR Second Pass (Final Encoding)" "$input_duration" "$profile_name" "$encoding_mode" "${cmd2[@]}" || { 
-        log ERROR "ABR second pass failed"; exit 1; 
+        log ERROR "ABR second pass failed"; return 1; 
     }
 
     # Cleanup stats

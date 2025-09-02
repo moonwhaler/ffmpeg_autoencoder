@@ -115,17 +115,31 @@ process_directory() {
     
     log INFO "Processing directory: $input_dir"
     
-    # Find all video files in the directory
-    local file_count=0
-    while IFS= read -r -d '' input_file; do
-        ((file_count++))
+    # Use a much simpler and more reliable approach
+    local temp_file_list="/tmp/video_files_$$"
+    find "$input_dir" -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.mov" -o -iname "*.m4v" \) > "$temp_file_list"
+    
+    local file_count=$(wc -l < "$temp_file_list")
+    
+    if [[ $file_count -eq 0 ]]; then
+        log WARN "No video files found in directory: $input_dir"
+        rm -f "$temp_file_list"
+        exit 1
+    fi
+    
+    log INFO "Found $file_count video files to process"
+    
+    # Process each file using a different file descriptor to avoid conflicts with stdin
+    local processed_count=0
+    while IFS= read -r input_file <&3; do
+        ((processed_count++)) || true
         local basename="$(basename "$input_file")"
         
-        log INFO "[$(date '+%Y-%m-%d %H:%M:%S')] Processing file $file_count: $basename"
+        log INFO "[$processed_count/$file_count] Processing: $basename"
         log INFO "→ Profile: $profile"
         log INFO "→ Mode:    $mode"
         
-        # Generate UUID-based output filename (no output parameter provided)
+        # Generate UUID-based output filename
         local file_basename="$(basename "$input_file")"
         local name="${file_basename%.*}"
         local ext="${file_basename##*.}"
@@ -133,19 +147,21 @@ process_directory() {
         local file_input_dir="$(dirname "$input_file")"
         local generated_output="${file_input_dir}/${name}_${uuid}.${ext}"
         
-        # Process the single file
-        process_single_file "$input_file" "$generated_output" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
+        log INFO "→ Output: $(basename "$generated_output")"
         
-        log INFO "→ Done:    $basename"
+        # Process the single file
+        if process_single_file "$input_file" "$generated_output" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"; then
+            log INFO "→ ✓ Completed: $basename"
+        else
+            log ERROR "→ ✗ Failed: $basename"
+        fi
         log INFO "----------------------------------------"
-    done < <(find "$input_dir" -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.mov" -o -iname "*.m4v" \) -print0)
+    done 3< "$temp_file_list"
     
-    if [[ $file_count -eq 0 ]]; then
-        log WARN "No video files found in directory: $input_dir"
-        exit 1
-    fi
+    # Clean up
+    rm -f "$temp_file_list"
     
-    log INFO "Batch encoding completed. Processed $file_count files."
+    log INFO "Batch encoding completed. Processed $processed_count files."
 }
 
 # Main function

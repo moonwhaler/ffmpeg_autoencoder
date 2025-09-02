@@ -7,7 +7,7 @@
 parse_base_profile() {
     local profile_name=$1
     local str=${BASE_PROFILES[$profile_name]:-}
-    [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; exit 1; }
+    [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; return 1; }
     
     # Extract base values from profile
     local base_bitrate=$(echo "$str" | grep -o 'base_bitrate=[^:]*' | cut -d= -f2)
@@ -27,7 +27,7 @@ parse_and_adapt_profile() {
     local input_file=$2
     local complexity_score=$3  # Add complexity_score as parameter
     local str=${BASE_PROFILES[$profile_name]:-}
-    [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; exit 1; }
+    [[ -n $str ]] || { log ERROR "Unknown profile: $profile_name"; return 1; }
     
     # HDR Detection
     local is_hdr=$(extract_hdr_metadata "$input_file")

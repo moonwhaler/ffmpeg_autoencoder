@@ -46,9 +46,9 @@ log() {
 # Input file validation
 validate_input() {
     local f=$1
-    [[ -f $f && -r $f ]] || { log ERROR "Invalid input file: $f"; exit 1; }
+    [[ -f $f && -r $f ]] || { log ERROR "Invalid input file: $f"; return 1; }
     ffprobe -v error -analyzeduration 100M -probesize 50M -select_streams v:0 -show_entries stream=index "$f" >/dev/null \
-        || { log ERROR "No video stream: $f"; exit 1; }
+        || { log ERROR "No video stream: $f"; return 1; }
     log INFO "Input validated: $f"
 }
 
