@@ -91,25 +91,50 @@ get_total_frame_count() {
     local input="$1"
     local frame_count
     
-    # Try multiple methods for frame count detection
-    frame_count=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "$input" 2>/dev/null)
+    # Get file size and resolution to determine if we should use fast estimation
+    local file_size=$(stat -f%z "$input" 2>/dev/null || stat -c%s "$input" 2>/dev/null || echo "0")
+    local width=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 "$input" 2>/dev/null | sed 's/,$//' || echo "1920")
+    local height=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$input" 2>/dev/null | sed 's/,$//' || echo "1080")
     
-    # Fallback method if first fails
-    if [[ ! "$frame_count" =~ ^[0-9]+$ ]] || [[ $frame_count -eq 0 ]]; then
-        frame_count=$(ffprobe -v error -select_streams v:0 -count_frames -show_entries stream=nb_frames -of csv=p=0 "$input" 2>/dev/null)
+    # Use fast estimation for large files (>10GB) or high resolution (4K+)
+    local use_fast_method=false
+    if [[ $file_size -gt 10737418240 ]] || [[ $width -ge 3840 || $height -ge 2160 ]]; then
+        use_fast_method=true
+        log "INFO" "Large file detected ($(numfmt --to=iec $file_size), ${width}x${height}). Using fast frame count estimation to avoid long scan times."
     fi
     
-    # Final fallback: estimate from duration and fps
-    if [[ ! "$frame_count" =~ ^[0-9]+$ ]] || [[ $frame_count -eq 0 ]]; then
+    if [[ "$use_fast_method" == "false" ]]; then
+        # Try precise counting for smaller files
+        log "INFO" "Using precise frame counting for accurate progress tracking..."
+        frame_count=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "$input" 2>/dev/null)
+        
+        # Fallback method if first fails
+        if [[ ! "$frame_count" =~ ^[0-9]+$ ]] || [[ $frame_count -eq 0 ]]; then
+            frame_count=$(ffprobe -v error -select_streams v:0 -count_frames -show_entries stream=nb_frames -of csv=p=0 "$input" 2>/dev/null)
+        fi
+    fi
+    
+    # Use fast estimation method for large files or if precise counting failed
+    if [[ "$use_fast_method" == "true" ]] || [[ ! "$frame_count" =~ ^[0-9]+$ ]] || [[ $frame_count -eq 0 ]]; then
         local duration fps
         duration=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$input" 2>/dev/null)
         fps=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "$input" 2>/dev/null)
         
         if [[ -n "$duration" && -n "$fps" ]]; then
+            # Clean fps string (remove trailing comma and whitespace)
+            fps=$(echo "$fps" | sed 's/,$//' | tr -d ' ')
             # Convert fps fraction to decimal
             fps=$(bc -l <<< "scale=3; $fps" 2>/dev/null || echo "25")
             frame_count=$(bc -l <<< "scale=0; $duration * $fps / 1" 2>/dev/null || echo "0")
+            
+            if [[ "$use_fast_method" == "true" ]]; then
+                log "INFO" "Frame count estimated: $frame_count frames (duration: ${duration}s, fps: $fps)"
+            else
+                log "WARN" "Precise counting failed, using estimation: $frame_count frames"
+            fi
         fi
+    else
+        log "INFO" "Precise frame count: $frame_count frames"
     fi
     
     # Return 0 if we still couldn't determine frame count
