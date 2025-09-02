@@ -1,312 +1,357 @@
 # Advanced FFmpeg Multi-Mode Encoding Script Suite
 
-## Overview
-A professional Bash script suite featuring **multi-mode encoding support (CRF/ABR/CBR)**, automated content analysis, adaptive parameter optimization, and batch processing capabilities. The system provides industry-grade encoding flexibility with Netflix-style per-content optimization.
+A professional-grade Bash script suite for automated video encoding using FFmpeg with x265/HEVC codec. Features **multi-mode encoding support (CRF/ABR/CBR)**, intelligent content analysis, adaptive parameter optimization, automatic profile selection, and comprehensive batch processing capabilities.
 
-## Core Script: `ffmpeg_encoder.sh` Version 2.3
+## 🎯 Key Features
 
-### Multi-Mode Encoding System 🆕
+### Multi-Mode Encoding System
+- **CRF Mode**: Single-pass Constant Rate Factor (Pure VBR) - Optimal for archival/mastering
+- **ABR Mode**: Two-pass Average Bitrate (Default) - Perfect for streaming/delivery  
+- **CBR Mode**: Two-pass Constant Bitrate - Essential for broadcast/live streaming
 
-#### **3 Professional Encoding Modes**
-- **`CRF Mode`**: Single-pass Constant Rate Factor (Pure VBR) - Best for archival/mastering
-- **`ABR Mode`**: Two-pass Average Bitrate (Default) - Best for streaming/delivery  
-- **`CBR Mode`**: Two-pass Constant Bitrate - Best for broadcast/live streaming
+### Intelligent Content Analysis
+- **Automatic Profile Selection**: AI-driven content classification with web search validation
+- **Content-Aware Optimization**: Separate CRF and bitrate modifiers for different content types
+- **Complexity Analysis**: Dynamic parameter adjustment based on video characteristics
+- **HDR10 Detection**: Automatic HDR metadata preservation and parameter optimization
 
-#### **Mode Selection Guide**
-| Mode | Use Case | Quality | File Size | Bandwidth |
-|------|----------|---------|-----------|-----------|
-| **CRF** | Archival, Mastering | Highest | Variable | Variable |
-| **ABR** | Streaming, VOD | High | Predictable | Variable |
-| **CBR** | Broadcast, Live | Good | Predictable | Constant |
+### Professional Features
+- **Multi-Sample Crop Detection**: Temporal analysis across video timeline
+- **Real-Time Progress Visualization**: Enhanced progress bars with ETA calculation
+- **Comprehensive Logging**: Professional-grade logging with detailed parameter tracking
+- **Batch Processing**: Directory-based encoding with UUID collision prevention
 
-### Content-Adaptive Engine
+## 🚀 Quick Start
 
-#### **Dual-Aware Parameter Optimization** 🆕
-- **Content-Type Awareness**: Separate CRF and bitrate modifiers for Anime/3D Animation/Film
-- **Complexity Analysis**: Dynamic adjustment based on spatial/temporal information
-- **Combined Intelligence**: Both content type AND complexity considered for optimal results
-
-#### **Content-Aware CRF Adjustments**
-```
-Anime:         Base CRF + 0.5  (efficient compression for flat areas)
-3D Animation:  Base CRF - 0.8  (preserve CGI detail and textures)
-Film:          Base CRF + 0.0  (balanced live-action optimization)
-```
-
-#### **Automated Video Analysis**
-- **Spatial Information (SI)**: Sobel filter-based edge detection
-- **Temporal Information (TI)**: P/B frame ratio motion analysis
-- **Scene Change Detection**: Adaptive threshold cut detection
-- **Frame Distribution**: I/P/B frame complexity analysis
-
-### Automatic Features
-
-#### **Intelligent Crop Detection**
-- **Multi-Sample Analysis**: Beginning/middle/end temporal points
-- **HDR-Adaptive Limits**: Different thresholds for HDR vs SDR content
-- **Frequency-Based Selection**: Most common crop value for stability
-- **Minimum Threshold Validation**: Only crops if meaningful difference detected
-
-#### **HDR10 Support & Preservation**
-- **Automatic HDR Detection**: Color primaries and transfer characteristics analysis
-- **Metadata Preservation**: Master Display and Content Light Level information
-- **Correct Color Space Implementation**: BT.2020 with SMPTE2084 transfer curves
-
-### Encoding Profiles (12 Optimized Profiles)
-
-#### **1080p Profiles**
-| Profile | Base CRF | Bitrate Range | Content Optimization |
-|---------|----------|---------------|---------------------|
-| `1080p_anime` | 20 | 3.4-5.6 Mbps | Animation tuning, enhanced deblocking |
-| `1080p_3d_animation` | 18 | 5.1-8.4 Mbps | CGI detail preservation, smooth gradients |
-| `1080p_film` | 19 | 4.25-7.0 Mbps | Live-action balanced parameters |
-
-#### **4K Profiles**  
-| Profile | Base CRF | Bitrate Range | Content Optimization |
-|---------|----------|---------------|---------------------|
-| `4k_anime` | 22 | 8.5-14.0 Mbps | Scaled animation parameters |
-| `4k_3d_animation` | 20 | 12.6-20.7 Mbps | High-detail CGI support |
-| `4k_film` | 21 | 13.6-22.4 Mbps | Professional film standards |
-
-*Each profile includes HDR variant with +2 CRF and +20% bitrate allocation*
-
-### Command Line Interface
-
-#### **Updated Syntax**
+### Basic Usage
 ```bash
-./ffmpeg_encoder.sh -i INPUT [-o OUTPUT] -p PROFILE [OPTIONS]
+# Single file with automatic profile selection
+./ffmpeg_encoder.sh -i video.mkv -p auto
+
+# Batch processing entire directory
+./ffmpeg_encoder.sh -i ~/Videos/ -p auto
+
+# Specific profile with CRF mode for archival
+./ffmpeg_encoder.sh -i movie.mkv -p 4k -m crf
 ```
 
-#### **Parameters**
-- **Required**:
-  - `-i, --input`: Input video file
-  - `-p, --profile`: Encoding profile selection
-  
-- **Optional Output**:
-  - `-o, --output`: Output file path (optional, defaults to input_UUID.ext in same directory)
-  
-- **Optional**:
-  - **`-m, --mode`**: Encoding mode: `crf`, `abr`, `cbr` (default: `abr`) 🆕
-  - `-t, --title`: Video title metadata
-  - `-c, --crop`: Manual crop override (format: w:h:x:y)
-  - `-s, --scale`: Scaling parameters (format: w:h)
+## 📋 System Requirements
 
-### Usage Examples
+### Dependencies
+- **ffmpeg** (with libx265 support)
+- **ffprobe** (included with ffmpeg)
+- **bc** (for floating-point calculations)
+- **uuidgen** (for unique output naming)
+- **jq** (for JSON processing in auto-selection)
 
-#### **Content-Specific Recommendations**
-
-**Anime Content:**
+### Installation
 ```bash
-# CRF mode for archival (highest quality, variable size)
-./ffmpeg_encoder.sh -i anime.mkv -o anime_archive.mkv -p 1080p_anime -m crf
+# Ubuntu/Debian
+sudo apt update && sudo apt install ffmpeg bc uuid-runtime jq
 
-# ABR mode for streaming with auto-generated UUID output
-./ffmpeg_encoder.sh -i anime.mkv -p 1080p_anime -m abr
-
-# CBR mode for broadcast (constant bandwidth)
-./ffmpeg_encoder.sh -i anime.mkv -o anime_broadcast.mkv -p 1080p_anime -m cbr
+# macOS (Homebrew)
+brew install ffmpeg bc jq
 ```
 
-**3D Animation/CGI:**
-```bash
-# Preserve CGI detail with auto-generated UUID output
-./ffmpeg_encoder.sh -i pixar_movie.mkv -p 4k_3d_animation -m crf
+## 🎬 Encoding Profiles
 
-# Streaming delivery with custom output name
-./ffmpeg_encoder.sh -i cgi_series.mkv -o cgi_optimized.mkv -p 1080p_3d_animation -m abr
-```
+The system includes 6 meticulously optimized profiles for different content types:
 
-**Live-Action Film:**
-```bash  
-# Master archive with UUID-based naming
-./ffmpeg_encoder.sh -i film.mkv -p 4k_film -m crf
+### Available Profiles
 
-# Streaming distribution with custom output
-./ffmpeg_encoder.sh -i film.mkv -o film_stream.mkv -p 1080p_film -m abr
+| Profile | Content Type | Base CRF | Optimization Focus |
+|---------|--------------|----------|-------------------|
+| **`anime`** | 2D Animation | 23 | Flat areas, enhanced deblocking, animation tuning |
+| **`classic_anime`** | Classic Animation | 22 | Film grain preservation, finer detail retention |
+| **`3d_cgi`** | 3D CGI (Pixar-like) | 22 | Complex textures, smooth gradients, detail preservation |
+| **`3d_complex`** | Complex 3D (Arcane-like) | 21 | High detail, complex animation, enhanced parameters |
+| **`4k`** | General 4K Content | 22 | Balanced general-purpose optimization |
+| **`4k_heavy_grain`** | Heavy Grain 4K | 21 | Specialized grain preservation, selective SAO |
 
-# Broadcast transmission (constant bitrate)
-./ffmpeg_encoder.sh -i film.mkv -o film_broadcast.mkv -p 1080p_film -m cbr
-```
+## 🎛️ Encoding Modes
+
+### Mode Comparison
+
+| Mode | Passes | Quality Control | Use Case | File Size |
+|------|--------|----------------|----------|-----------|
+| **CRF** | 1 | Pure quality-based | Archival, Mastering | Variable |
+| **ABR** | 2 | Quality + size balance | Streaming, VOD | Predictable |
+| **CBR** | 2 | Constant bandwidth | Broadcast, Live | Constant |
 
 ### Technical Implementation
 
-#### **Mode-Specific Encoding**
-
-**CRF Mode (Pure VBR):**
+**CRF Mode (Pure VBR)**:
 ```bash
-# Single-pass, quality-based encoding
 ffmpeg -i input.mkv -c:v libx265 -crf [adaptive_crf] -preset slow output.mkv
 ```
 
-**ABR Mode (Two-Pass VBR):**
-```bash  
-# Pass 1: Statistical analysis
-ffmpeg -i input.mkv -b:v [adaptive_bitrate] -pass 1 -f null /dev/null
-# Pass 2: Quality-optimized encode  
-ffmpeg -i input.mkv -b:v [adaptive_bitrate] -pass 2 output.mkv
+**ABR Mode (Two-Pass Average)**:
+```bash
+# Pass 1: Statistical analysis with medium preset
+ffmpeg -i input.mkv -b:v [bitrate] -pass 1 -preset medium -f null /dev/null
+# Pass 2: Quality-optimized encoding
+ffmpeg -i input.mkv -b:v [bitrate] -pass 2 -preset slow output.mkv
 ```
 
-**CBR Mode (Constant Bitrate):**
+**CBR Mode (Constant Bitrate)**:
 ```bash
-# Two-pass with buffer constraints
+# Two-pass with VBV buffer constraints
 ffmpeg -i input.mkv -b:v [bitrate] -minrate [bitrate] -maxrate [bitrate] \
        -bufsize [1.5x bitrate] -pass 1/2 output.mkv
 ```
 
-#### **Adaptive Parameter Calculation**
+## 🤖 Automatic Profile Selection
+
+### Intelligent Content Classification
+
+The system uses multi-layer analysis:
+
+1. **Technical Analysis**: Resolution, grain level, motion complexity
+2. **Web Search Validation**: Title extraction and content verification
+3. **Confidence Scoring**: Combines technical and web search results
+
+### Usage Examples
+
+```bash
+# Auto-selection with web search (default)
+./ffmpeg_encoder.sh -i "Spirited Away (2001).mkv" -p auto
+
+# Force web search even with high technical confidence  
+./ffmpeg_encoder.sh -i movie.mkv -p auto --web-search-force
+
+# Disable web search, use technical analysis only
+./ffmpeg_encoder.sh -i movie.mkv -p auto --no-web-search
+```
+
+## 📊 Content Analysis Features
+
+### Complexity Analysis System
+
+When enabled with `--use-complexity`, the system analyzes:
+
+- **Spatial Information (SI)**: Edge density and texture complexity
+- **Temporal Information (TI)**: Motion and scene change analysis  
+- **Grain Detection**: Multi-sample grain pattern analysis
+- **Frame Distribution**: I/P/B frame complexity assessment
+
+### Adaptive Parameter Calculation
+
 ```bash
 # Content-aware CRF adjustment
 final_crf = base_crf + content_modifier + complexity_adjustment
 
-# Content modifiers:  
-# Anime: +0.5 CRF, 3D Animation: -0.8 CRF, Film: 0.0 CRF
+Content Modifiers:
+- Anime: +0.2 CRF (efficient for flat areas)
+- 3D Animation: -0.4 CRF (preserve CGI detail)  
+- Film: 0.0 CRF (baseline for live-action)
 
-# Complexity-based bitrate scaling
+# Dynamic bitrate scaling
 complexity_factor = 0.7 + (complexity_score / 100 × 0.6)
 adaptive_bitrate = base_bitrate × complexity_factor × content_modifier
 ```
 
-### x265 Parameter Optimizations
+## 🎥 Usage Examples
 
-#### **Anime-Specific Parameters**
-```
-tune=animation, aq-mode=3, psy-rd=1.5, psy-rdoq=2
-bframes=8, deblock=1,1, limit-sao=1
-```
-Optimized for flat shading, hard edges, and efficient compression of traditional animation.
+### Content-Specific Encoding
 
-#### **3D Animation Parameters**
-```
-strong-intra-smoothing=1, psy-rdoq=1.8, aq-mode=3
-```
-Preserves CGI detail while preventing over-sharpening of synthetic content.
-
-#### **Film Parameters**
-```
-aq-mode=1, psy-rd=1.0, psy-rdoq=1.0
-```
-Balanced parameters for natural motion, lighting, and live-action content.
-
-## Batch Processing Script: `ffmpeg_batch_encoder.sh`
-
-### Enhanced Batch Features
-- **Mode Support**: All three encoding modes supported in batch processing
-- **Recursive Processing**: Handles entire directory trees
-- **UUID-Based Naming**: Prevents overwrites with unique identifiers
-- **Format Support**: .mkv, .mp4, .mov, .m4v files
-- **Parallel Processing**: Multiple concurrent instances supported
-
-### Batch Syntax
+**Modern Anime**:
 ```bash
-./ffmpeg_batch_encoder.sh -i INPUT_DIR -p PROFILE [-m MODE]
+# CRF for archival quality
+./ffmpeg_encoder.sh -i anime.mkv -p anime -m crf
+
+# ABR for streaming with complexity analysis
+./ffmpeg_encoder.sh -i anime.mkv -p anime -m abr --use-complexity
 ```
 
-**Key Changes:**
-- **No Output Directory**: Files are encoded in the same directory as source files
-- **UUID Naming**: Automatic UUID-based naming prevents overwrites (input_UUID.ext)
-- **Simplified Workflow**: Reduced parameters for easier batch processing
+**3D Animation/CGI**:
+```bash
+# Preserve rendering detail
+./ffmpeg_encoder.sh -i pixar_movie.mkv -p 3d_cgi -m crf
 
-## Professional Use Case Guide
+# Complex animation (Arcane-style)
+./ffmpeg_encoder.sh -i arcane.mkv -p 3d_complex -m abr
+```
 
-### **Archival & Mastering**
+**Live-Action Film**:
+```bash
+# General 4K film
+./ffmpeg_encoder.sh -i film.mkv -p 4k -m abr
+
+# Heavy grain preservation
+./ffmpeg_encoder.sh -i grain_film.mkv -p 4k_heavy_grain -m crf --denoise
+```
+
+### Advanced Options
+
+```bash
+# Full feature demonstration
+./ffmpeg_encoder.sh \
+  -i input.mkv \
+  -o custom_output.mkv \
+  -p auto \
+  -m crf \
+  -t "Movie Title" \
+  --use-complexity \
+  --denoise \
+  --hardware
+```
+
+## 📁 Batch Processing
+
+### Simplified Batch Workflow
+
+Process entire directories with consistent naming:
+
+```bash
+# Process all videos in directory with auto-selection
+./ffmpeg_encoder.sh -i ~/Videos/Raw/ -p auto -m abr
+
+# All files encoded in same directory with UUID-based names:
+# input_a1b2c3d4-e5f6-7890-abcd-ef1234567890.mkv
+```
+
+### Key Batch Features
+
+- **Recursive Processing**: Handles nested directory structures
+- **UUID-Based Naming**: Prevents file overwrites automatically  
+- **Format Support**: .mkv, .mp4, .mov, .m4v files
+- **Progress Tracking**: Individual file progress with batch overview
+
+## 🛠️ Command Line Reference
+
+### Required Parameters
+- **`-i, --input`**: Input file or directory
+- **`-p, --profile`**: Encoding profile (or 'auto' for intelligent selection)
+
+### Optional Parameters
+- **`-o, --output`**: Output filename (defaults to input_UUID.ext)
+- **`-m, --mode`**: Encoding mode: crf, abr, cbr (default: abr)
+- **`-t, --title`**: Video title metadata
+- **`-c, --crop`**: Manual crop override (w:h:x:y format)  
+- **`-s, --scale`**: Scale resolution (w:h format)
+
+### Advanced Options
+- **`--use-complexity`**: Enable adaptive parameter optimization
+- **`--denoise`**: Apply light denoising (hqdn3d=1:1:2:2)
+- **`--hardware`**: Enable CUDA acceleration (with fallback)
+- **`--web-search`**: Enable web search validation (default)
+- **`--web-search-force`**: Force web search even with high confidence
+- **`--no-web-search`**: Disable web search, use technical analysis only
+
+## 📈 Progress Visualization
+
+### Real-Time Monitoring
+
+The system provides comprehensive progress tracking:
+
+```
+CRF Encoding (Single Pass): [████████████████████████████████████░░░] 72.3% | ETA: 04:27 | Est: 2.1GB
+ABR First Pass (Analysis):  [██████████████████████████████████████] 100.0% | Completed
+ABR Second Pass (Final):    [██████████████████████████░░░░░░░░░░░░░] 65.8% | ETA: 06:15 | Est: 1.8GB
+```
+
+### Logging System
+
+- **Color-coded output**: INFO (green), WARN (yellow), ERROR (red), ANALYSIS (purple)
+- **Detailed parameter logging**: Complexity scores, adaptive adjustments
+- **Comprehensive session logs**: Saved alongside output files
+
+## 🔧 Advanced Features
+
+### HDR10 Support
+
+Automatic HDR detection and handling:
+
+- **Color space preservation**: BT.2020 with SMPTE2084 transfer
+- **Metadata passthrough**: Master Display and Content Light Level info
+- **Adaptive parameters**: +2 CRF and +20% bitrate for HDR content
+
+### Automatic Crop Detection
+
+Multi-temporal analysis system:
+
+- **Sample points**: Beginning (60s), middle, end (duration-60s)
+- **HDR-adaptive thresholds**: Different limits for HDR vs SDR
+- **Validation logic**: Only applies significant crops (>1% change)
+
+### Stream Preservation
+
+Comprehensive stream handling:
+
+- **Lossless audio copy**: All audio tracks preserved without transcoding
+- **Subtitle preservation**: All subtitle formats and languages maintained  
+- **Chapter & metadata**: Navigation and metadata information transferred
+
+## 💡 Professional Use Cases
+
+### Content Production Workflows
+
+**Archival & Mastering**:
 ```bash
 # Maximum quality preservation
--m crf -p [content_profile]
+./ffmpeg_encoder.sh -i master.mkv -p auto -m crf --use-complexity
 ```
-- **Best for**: Master copies, long-term storage, quality-critical applications
-- **Trade-offs**: Variable file sizes, longest encode times
-- **Quality**: Highest possible for given profile
 
-### **Streaming & VOD Delivery**  
+**Streaming Preparation**:
+```bash  
+# Predictable sizes for adaptive streaming
+./ffmpeg_encoder.sh -i content.mkv -p auto -m abr --use-complexity
+```
+
+**Broadcast Delivery**:
 ```bash
-# Predictable file sizes with high quality
--m abr -p [content_profile] 
-```
-- **Best for**: Netflix/Amazon Prime style delivery, adaptive streaming
-- **Trade-offs**: Slightly lower peak quality, predictable sizes
-- **Quality**: Excellent quality-to-size ratio
-
-### **Broadcast & Live Streaming**
-```bash
-# Constant bandwidth requirements
--m cbr -p [content_profile]
-```
-- **Best for**: TV broadcast, live streaming, transmission constraints
-- **Trade-offs**: Least efficient compression, constant bandwidth
-- **Quality**: Good quality with guaranteed bitrate limits
-
-### **Content Type Recommendations**
-
-| Content Type | Recommended 1080p | Recommended 4K | Best Mode | Reasoning |
-|--------------|------------------|----------------|-----------|-----------|
-| **Modern Anime** | `1080p_anime` | `4k_anime` | `CRF`/`ABR` | Flat areas compress efficiently |
-| **Classic Anime** | `1080p_classic_anime` | `4k_classic_anime` | `CRF` | Preserve film grain |
-| **3D Animation/CGI** | `1080p_3d_animation` | `4k_3d_animation` | `CRF` | Preserve rendering detail |
-| **Live-Action Film** | `1080p_film` | `4k_film` | `ABR` | Balanced for streaming |
-| **Heavy Grain Film** | `1080p_heavygrain_film` | `4k_heavygrain_film` | `CRF` | Specialized grain preservation |
-| **Action/Sports** | `1080p_action` | `4k_action` | `ABR`/`CBR` | High-motion optimization |
-| **Clean Digital** | `1080p_clean_digital` | `4k_clean_digital` | `ABR` | Digital/upscaled content |
-| **TV Broadcast** | Any appropriate profile | Any | `CBR` | Constant bandwidth needs |
-| **Archive/Master** | Content-appropriate profile | Content-appropriate profile | `CRF` | Maximum quality retention |
-
-## Quality & Performance Metrics
-
-### **Encoding Efficiency**
-- **50-70% Size Reduction**: vs x264 at equivalent quality levels
-- **Content-Adaptive Savings**: Up to 30% additional savings through intelligent parameter adjustment
-- **Mode-Specific Optimization**: Each mode optimized for its use case
-
-### **Quality Preservation**  
-- **10-bit Encoding**: All profiles prevent color banding
-- **HDR Metadata Integrity**: Lossless HDR10 information transfer
-- **Stream Preservation**: Zero-loss audio/subtitle copying
-- **Content-Aware Quality**: Optimal CRF adjustment per content type
-
-### **Performance Optimizations**
-- **Strategic Preset Usage**: Medium (pass 1) + Slow/Medium (pass 2)
-- **Optimized Lookahead**: 60 frames (1080p), 80 frames (4K)
-- **Multi-threading Friendly**: Parameters optimized for parallel processing
-
-## Dependencies & Requirements
-
-### **Required Tools**
-- **ffmpeg**: With libx265 support and advanced filters
-- **ffprobe**: For stream analysis and metadata extraction  
-- **bc**: For floating-point arithmetic calculations
-- **uuidgen**: For UUID-based output naming (both scripts)
-
-### **Supported Input Formats**
-- **Containers**: .mkv, .mp4, .mov, .m4v
-- **Video Codecs**: Any format supported by ffmpeg
-- **Color Spaces**: HDR10, SDR with automatic detection
-- **Audio/Subtitle**: All formats preserved via stream copying
-
-## Logging & Progress Visualization
-
-### **Real-Time Progress System**
-- **Visual Progress Bars**: For encoding phases with time estimates
-- **Spinner Animations**: For analysis phases of unknown duration
-- **Color-Coded Logging**: INFO (green), WARN (yellow), ERROR (red), ANALYSIS (purple), CROP (cyan)
-- **Comprehensive Metrics**: Complexity scores, adaptive parameters, compression ratios
-
-### **Professional Logging Format**
-```
-[INFO] 2025-01-26 15:30:45 - Encoding mode: crf - Adaptive parameters - Bitrate: 4000k → 3525k, CRF: 20 → 20.19 (Complexity: 56.2)
-[ANALYSIS] 2025-01-26 15:31:12 - Adaptive parameters - Bitrate: 4000 → 3525k, CRF: 20 → 20.19 (Complexity: 56.2)
+# Constant bitrate for transmission
+./ffmpeg_encoder.sh -i broadcast.mkv -p 4k -m cbr
 ```
 
-## Industry Standards & Research Foundation
+### Performance Recommendations
 
-### **Professional Compliance**
-- **Netflix Per-Title Encoding**: Implements adaptive encoding principles
-- **Broadcast Standards**: CBR mode meets transmission requirements  
-- **Streaming Best Practices**: ABR mode optimized for adaptive delivery
-- **Archival Standards**: CRF mode for preservation workflows
+| Content Type | Best Mode | Profile Recommendation | Special Flags |
+|--------------|-----------|----------------------|---------------|
+| **Anime Archive** | CRF | anime/classic_anime | --use-complexity |
+| **3D Animation Master** | CRF | 3d_cgi/3d_complex | --use-complexity |
+| **Streaming VOD** | ABR | auto | --use-complexity |
+| **Live Broadcast** | CBR | appropriate for content | minimal flags |
+| **Heavy Grain Film** | CRF | 4k_heavy_grain | --denoise optional |
 
-### **Community & Research Sources**
-- **Doom9 Community**: Established encoding methodologies
-- **Professional Workflows**: Disney/Pixar CGI encoding practices
-- **HDR10 Standards**: Code Calamity HDR methodologies
-- **Animation Optimization**: Kokomins anime encoding principles
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**Encoding fails with error**:
+- Check ffmpeg installation: `ffmpeg -version`
+- Verify input file: `ffprobe input.mkv`
+- Review error logs in generated .log file
+
+**Slow encoding performance**:
+- Use hardware acceleration: `--hardware`
+- Choose appropriate preset for content type
+- Consider ABR mode over CRF for production workflows
+
+**Unexpected file sizes**:
+- Enable complexity analysis: `--use-complexity`
+- Check HDR detection in logs
+- Review adaptive parameter calculations
+
+## 🏆 Quality Metrics
+
+### Encoding Efficiency
+- **50-70% size reduction** vs x264 at equivalent quality
+- **Content-adaptive savings**: Up to 30% additional optimization
+- **Mode-specific tuning**: Each mode optimized for its use case
+
+### Quality Preservation
+- **10-bit encoding**: Prevents color banding across all profiles
+- **HDR metadata integrity**: Lossless HDR10 passthrough  
+- **Stream preservation**: Zero-loss audio/subtitle copying
+- **Content-aware optimization**: Optimal parameters per content type
+
+---
+
+## 📄 Version Information
+
+**Current Version**: 2.4  
+**Last Updated**: January 2025  
+**Compatibility**: FFmpeg 4.0+, x265 3.0+
 
 This script suite represents **state-of-the-art automated video encoding** with professional-grade multi-mode support, suitable for individual creators, streaming platforms, broadcast facilities, and enterprise media workflows.
