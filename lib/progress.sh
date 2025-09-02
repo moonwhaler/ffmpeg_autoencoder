@@ -269,6 +269,29 @@ calculate_eta() {
     echo "${eta_estimate%.*}"  # Return integer seconds
 }
 
+# Format file size in human-readable format
+format_file_size() {
+    local bytes="$1"
+    
+    if [[ -z "$bytes" ]] || [[ "$bytes" -eq 0 ]]; then
+        echo "0B"
+        return
+    fi
+    
+    local units=("B" "KB" "MB" "GB" "TB")
+    local size="$bytes"
+    local unit_index=0
+    
+    while (( $(echo "$size >= 1024" | bc -l 2>/dev/null || echo 0) )) && [[ $unit_index -lt 4 ]]; do
+        size=$(bc -l <<< "scale=1; $size / 1024" 2>/dev/null || echo "$size")
+        ((unit_index++))
+    done
+    
+    # Remove trailing .0
+    size=$(echo "$size" | sed 's/\.0$//')
+    echo "${size}${units[$unit_index]}"
+}
+
 # Format duration in human-readable format
 format_duration() {
     local total_seconds="$1"
@@ -295,6 +318,8 @@ show_enhanced_progress() {
     local description="$1"
     local current_progress="$2"
     local eta="$3"
+    local current_size="$4"
+    local estimated_size="$5"
     
     local percent
     percent=$(bc -l <<< "scale=1; $current_progress * 100" 2>/dev/null || echo "0.0")
@@ -344,12 +369,21 @@ show_enhanced_progress() {
         percent_dec=0
     fi
     
-    printf "\r\033[K%s: [%s] %3d.%01d%% | ETA: %11s" \
+    # Format size display: show estimated size with label
+    local size_display
+    if [[ -n "$estimated_size" ]]; then
+        size_display="${estimated_size}"
+    else
+        size_display="calculating..."
+    fi
+    
+    printf "\r\033[K%s: [%s] %3d.%01d%% | ETA: %11s | Estimated size: %12s" \
            "$description" \
            "$progress_bar" \
            "$percent_int" \
            "${percent_dec:0:1}" \
-           "$eta_formatted"
+           "$eta_formatted" \
+           "$size_display"
 }
 
 # Enhanced FFmpeg with robust real-time progress tracking
@@ -364,11 +398,20 @@ run_ffmpeg_with_progress() {
     
     log INFO "$description"
     
-    # Get total frame count for more accurate tracking
-    local input_file
+    # Get input and output files for tracking
+    local input_file output_file
     for arg in "${cmd[@]}"; do
         if [[ -f "$arg" ]]; then
             input_file="$arg"
+            break
+        fi
+    done
+    
+    # Extract output file (last argument that's not an option)
+    for ((i=${#cmd[@]}-1; i>=0; i--)); do
+        local arg="${cmd[i]}"
+        if [[ "$arg" != -* ]] && [[ "$arg" != "$input_file" ]] && [[ "$arg" != *"="* ]]; then
+            output_file="$arg"
             break
         fi
     done
@@ -412,12 +455,29 @@ run_ffmpeg_with_progress() {
         
         IFS=':' read -r method current_progress fps frame speed <<< "$progress_info"
         
+        # Get current output file size and calculate estimated final size
+        local current_file_size="" estimated_final_size=""
+        if [[ -f "$output_file" ]]; then
+            local size_bytes
+            size_bytes=$(stat -f%z "$output_file" 2>/dev/null || stat -c%s "$output_file" 2>/dev/null || echo "0")
+            current_file_size=$(format_file_size "$size_bytes")
+            
+            # Calculate estimated final size if we have meaningful progress (>1%)
+            if [[ -n "$current_progress" ]] && (( $(echo "$current_progress > 0.01" | bc -l 2>/dev/null || echo 0) )); then
+                local estimated_bytes
+                estimated_bytes=$(bc -l <<< "scale=0; $size_bytes / $current_progress" 2>/dev/null || echo "$size_bytes")
+                estimated_final_size=$(format_file_size "$estimated_bytes")
+            fi
+        else
+            current_file_size="0B"
+        fi
+        
         # Handle stalled progress
         if [[ "$method" != "unknown" ]]; then
             if [[ "$current_progress" == "$last_progress" ]]; then
                 ((stall_count++))
                 if [[ $stall_count -gt $((10 / update_interval)) ]]; then  # ~10 seconds of stall
-                    log WARN "Progress stalled, checking process..."
+                    # Just check if process is still running, no warning message
                     if ! kill -0 "$pid" 2>/dev/null; then
                         break
                     fi
@@ -434,7 +494,7 @@ run_ffmpeg_with_progress() {
         
         # Update progress display
         if [[ "$method" != "unknown" ]] && [[ -n "$current_progress" ]] && (( $(echo "$current_progress >= 0" | bc -l 2>/dev/null || echo 0) )); then
-            show_enhanced_progress "$description" "$current_progress" "$eta"
+            show_enhanced_progress "$description" "$current_progress" "$eta" "$current_file_size" "$estimated_final_size"
         else
             # Fallback to simple spinner for early stages
             printf "\r\033[K%s: Processing... [%ds elapsed]" "$description" "$elapsed_time"
@@ -448,7 +508,13 @@ run_ffmpeg_with_progress() {
     
     # Final progress display
     if [[ $exit_code -eq 0 ]]; then
-        show_enhanced_progress "$description" "1" "0"
+        local final_file_size="0B"
+        if [[ -f "$output_file" ]]; then
+            local size_bytes
+            size_bytes=$(stat -f%z "$output_file" 2>/dev/null || stat -c%s "$output_file" 2>/dev/null || echo "0")
+            final_file_size=$(format_file_size "$size_bytes")
+        fi
+        show_enhanced_progress "$description" "1" "0" "" "$final_file_size"
     fi
     printf "\n"
     
