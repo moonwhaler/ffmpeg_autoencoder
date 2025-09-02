@@ -19,127 +19,15 @@ source "${SCRIPT_DIR}/lib/profiles.sh"
 source "${SCRIPT_DIR}/lib/encoding.sh"
 
 # Source profile selector modules for integrated auto-selection
-source "${SCRIPT_DIR}/lib/profile_logger.sh"
 source "${SCRIPT_DIR}/lib/profile_selector.sh"
 source "${SCRIPT_DIR}/lib/web_search.sh"
 
 # Global variable for hardware acceleration (used across modules)
 hardware_accel="false"
 
-# Main function
-main() {
-    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false" denoise="false"
-
-    # Check dependencies
-    for tool in ffmpeg ffprobe bc uuidgen; do
-        command -v $tool >/dev/null || { log ERROR "$tool missing (install: apt install $tool)"; exit 1; }
-    done
-
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -i|--input)    
-                if [[ $# -lt 2 || -z "$2" ]]; then
-                    log ERROR "Input file not specified for option $1"
-                    show_help
-                    exit 1
-                fi
-                input="$2"; shift 2 ;;
-            -o|--output)   
-                if [[ $# -lt 2 || -z "$2" ]]; then
-                    log ERROR "Output file not specified for option $1"
-                    show_help
-                    exit 1
-                fi
-                output="$2"; shift 2 ;;
-            -p|--profile)  
-                if [[ $# -lt 2 || -z "$2" ]]; then
-                    log ERROR "Profile not specified for option $1"
-                    show_help
-                    exit 1
-                fi
-                profile="$2"; shift 2 ;;
-            -t|--title)    
-                if [[ $# -lt 2 || -z "$2" ]]; then
-                    log ERROR "Title not specified for option $1"
-                    show_help
-                    exit 1
-                fi
-                title="$2"; shift 2 ;;
-            -c|--crop)     
-                if [[ $# -lt 2 || -z "$2" ]]; then
-                    log ERROR "Crop parameters not specified for option $1"
-                    show_help
-                    exit 1
-                fi
-                crop="$2"; shift 2 ;;
-            -s|--scale)    
-                if [[ $# -lt 2 || -z "$2" ]]; then
-                    log ERROR "Scale parameters not specified for option $1"
-                    show_help
-                    exit 1
-                fi
-                scale="$2"; shift 2 ;;
-            -m|--mode)     
-                if [[ $# -lt 2 || -z "$2" ]]; then
-                    log ERROR "Mode not specified for option $1"
-                    show_help
-                    exit 1
-                fi
-                mode="$2"; shift 2 ;;
-            --web-search)
-                web_search_enabled="true"
-                shift ;;
-            --web-search-force)
-                web_search_enabled="force"
-                shift ;;
-            --no-web-search)
-                web_search_enabled="false"
-                shift ;;
-            --use-complexity)
-                use_complexity_analysis="true"
-                shift ;;
-            --denoise)
-                denoise="true"
-                shift ;;
-            --hardware)
-                hardware_accel="true"
-                shift ;;
-            -h|--help)     
-                show_help
-                exit 0 ;;
-            -*) 
-                log ERROR "Unknown option: $1"
-                show_help
-                exit 1 ;;
-            *) 
-                log ERROR "Invalid argument: $1"
-                show_help
-                exit 1 ;;
-        esac
-    done
-
-    # Generate UUID-based output filename if not provided
-    if [[ -z $output ]]; then
-        if [[ -z $input ]]; then
-            log ERROR "Input file (-i) is required"
-            show_help
-            exit 1
-        fi
-        local basename="$(basename "$input")"
-        local name="${basename%.*}"
-        local ext="${basename##*.}"
-        local uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-        local input_dir="$(dirname "$input")"
-        output="${input_dir}/${name}_${uuid}.${ext}"
-        log INFO "Generated output filename: $(basename "$output")"
-    fi
-    
-    if [[ -z $input || -z $profile ]]; then
-        log ERROR "Missing required arguments: -i INPUT -p PROFILE"
-        show_help
-        exit 1
-    fi
+# Process a single file
+process_single_file() {
+    local input="$1" output="$2" profile="$3" title="$4" crop="$5" scale="$6" mode="$7" web_search_enabled="$8" use_complexity_analysis="$9" denoise="${10}"
     
     # Validate input file before automatic profile selection
     validate_input "$input"
@@ -219,6 +107,170 @@ main() {
 
     log INFO "Starting content-adaptive encoding with auto-crop and HDR detection..."
     run_encoding "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode" "$use_complexity_analysis" "$denoise"
+}
+
+# Process directory of video files
+process_directory() {
+    local input_dir="$1" profile="$2" title="$3" crop="$4" scale="$5" mode="$6" web_search_enabled="$7" use_complexity_analysis="$8" denoise="$9"
+    
+    log INFO "Processing directory: $input_dir"
+    
+    # Find all video files in the directory
+    local file_count=0
+    while IFS= read -r -d '' input_file; do
+        ((file_count++))
+        local basename="$(basename "$input_file")"
+        
+        log INFO "[$(date '+%Y-%m-%d %H:%M:%S')] Processing file $file_count: $basename"
+        log INFO "→ Profile: $profile"
+        log INFO "→ Mode:    $mode"
+        
+        # Generate UUID-based output filename (no output parameter provided)
+        local file_basename="$(basename "$input_file")"
+        local name="${file_basename%.*}"
+        local ext="${file_basename##*.}"
+        local uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+        local file_input_dir="$(dirname "$input_file")"
+        local generated_output="${file_input_dir}/${name}_${uuid}.${ext}"
+        
+        # Process the single file
+        process_single_file "$input_file" "$generated_output" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
+        
+        log INFO "→ Done:    $basename"
+        log INFO "----------------------------------------"
+    done < <(find "$input_dir" -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.mov" -o -iname "*.m4v" \) -print0)
+    
+    if [[ $file_count -eq 0 ]]; then
+        log WARN "No video files found in directory: $input_dir"
+        exit 1
+    fi
+    
+    log INFO "Batch encoding completed. Processed $file_count files."
+}
+
+# Main function
+main() {
+    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false" denoise="false"
+
+    # Check dependencies
+    for tool in ffmpeg ffprobe bc uuidgen; do
+        command -v $tool >/dev/null || { log ERROR "$tool missing (install: apt install $tool)"; exit 1; }
+    done
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -i|--input)    
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Input file/directory not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                input="$2"; shift 2 ;;
+            -o|--output)   
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Output file not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                output="$2"; shift 2 ;;
+            -p|--profile)  
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Profile not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                profile="$2"; shift 2 ;;
+            -t|--title)    
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Title not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                title="$2"; shift 2 ;;
+            -c|--crop)     
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Crop parameters not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                crop="$2"; shift 2 ;;
+            -s|--scale)    
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Scale parameters not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                scale="$2"; shift 2 ;;
+            -m|--mode)     
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    log ERROR "Mode not specified for option $1"
+                    show_help
+                    exit 1
+                fi
+                mode="$2"; shift 2 ;;
+            --web-search)
+                web_search_enabled="true"
+                shift ;;
+            --web-search-force)
+                web_search_enabled="force"
+                shift ;;
+            --no-web-search)
+                web_search_enabled="false"
+                shift ;;
+            --use-complexity)
+                use_complexity_analysis="true"
+                shift ;;
+            --denoise)
+                denoise="true"
+                shift ;;
+            --hardware)
+                hardware_accel="true"
+                shift ;;
+            -h|--help)     
+                show_help
+                exit 0 ;;
+            -*) 
+                log ERROR "Unknown option: $1"
+                show_help
+                exit 1 ;;
+            *) 
+                log ERROR "Invalid argument: $1"
+                show_help
+                exit 1 ;;
+        esac
+    done
+    
+    if [[ -z $input || -z $profile ]]; then
+        log ERROR "Missing required arguments: -i INPUT -p PROFILE"
+        show_help
+        exit 1
+    fi
+    
+    # Check if input is a directory or file
+    if [[ -d "$input" ]]; then
+        # Directory processing - output parameter is ignored for batch processing
+        if [[ -n "$output" ]]; then
+            log WARN "Output parameter (-o) is ignored when processing directories. Files will be saved with UUID-based names."
+        fi
+        process_directory "$input" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
+    elif [[ -f "$input" ]]; then
+        # Single file processing
+        # Generate UUID-based output filename if not provided
+        if [[ -z $output ]]; then
+            local basename="$(basename "$input")"
+            local name="${basename%.*}"
+            local ext="${basename##*.}"
+            local uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+            local input_dir="$(dirname "$input")"
+            output="${input_dir}/${name}_${uuid}.${ext}"
+            log INFO "Generated output filename: $(basename "$output")"
+        fi
+        process_single_file "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
+    else
+        log ERROR "Input path does not exist or is not a file/directory: $input"
+        exit 1
+    fi
 }
 
 # Execute script
