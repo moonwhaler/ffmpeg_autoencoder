@@ -265,10 +265,8 @@ calculate_eta() {
     
     local eta_estimate=0
     
-    # Multiple ETA calculation methods for robustness
-    
-    # Method 1: Progress-based ETA
-    if (( $(echo "$current_progress > 0.01" | bc -l) )); then
+    # Primary method: Progress-based ETA (most stable)
+    if (( $(echo "$current_progress > 0.005" | bc -l) )); then
         local eta_progress
         eta_progress=$(bc -l <<< "scale=0; ($elapsed_time / $current_progress) - $elapsed_time" 2>/dev/null || echo "0")
         if [[ $eta_progress -gt 0 ]]; then
@@ -276,42 +274,40 @@ calculate_eta() {
         fi
     fi
     
-    # Method 2: Frame and FPS-based ETA (often more accurate)
-    if [[ "$fps" =~ ^[0-9.]+$ ]] && (( $(echo "$fps > 0" | bc -l) )) && [[ $total_frames -gt 0 ]] && (( $(echo "$current_progress > 0" | bc -l) )); then
+    # Use frame-based method only if progress-based fails AND we have reliable frame data
+    if [[ $eta_estimate -eq 0 ]] && [[ "$fps" =~ ^[0-9.]+$ ]] && (( $(echo "$fps > 0.1" | bc -l) )) && [[ $total_frames -gt 100 ]] && (( $(echo "$current_progress > 0.01" | bc -l) )); then
         local remaining_frames
         remaining_frames=$(bc -l <<< "scale=0; $total_frames * (1 - $current_progress)" 2>/dev/null || echo "0")
-        # Convert to integer for bash comparison
         remaining_frames=${remaining_frames%.*}
         if [[ $remaining_frames -gt 0 ]]; then
             local eta_frame
             eta_frame=$(bc -l <<< "scale=0; $remaining_frames / $fps" 2>/dev/null || echo "0")
-            # Convert to integer for bash comparison
             eta_frame=${eta_frame%.*}
-            
-            # Use frame-based ETA if it seems reasonable and differs significantly from progress-based
-            if [[ $eta_frame -gt 0 ]] && [[ $eta_frame -lt $((eta_estimate * 2)) || $eta_estimate -eq 0 ]]; then
+            if [[ $eta_frame -gt 0 ]] && [[ $eta_frame -lt $((48 * 3600)) ]]; then  # Less than 48 hours
                 eta_estimate="$eta_frame"
             fi
         fi
     fi
     
-    # Method 3: Speed-adjusted ETA (if speed info available)
-    if [[ "$speed" =~ ^[0-9.]+$ ]] && (( $(echo "$speed > 0" | bc -l) )) && [[ $eta_estimate -gt 0 ]]; then
+    # Apply speed adjustment only if we have a reasonable speed multiplier (0.5x to 3x)
+    if [[ "$speed" =~ ^[0-9.]+$ ]] && (( $(echo "$speed > 0.5 && $speed < 3.0" | bc -l) )) && [[ $eta_estimate -gt 0 ]]; then
         local eta_speed_adjusted
         eta_speed_adjusted=$(bc -l <<< "scale=0; $eta_estimate / $speed" 2>/dev/null || echo "$eta_estimate")
-        # Convert to integer for bash comparison
         eta_speed_adjusted=${eta_speed_adjusted%.*}
-        if [[ $eta_speed_adjusted -gt 0 ]]; then
+        # Only use speed adjustment if the result is reasonable
+        if [[ $eta_speed_adjusted -gt 0 ]] && [[ $eta_speed_adjusted -lt $((eta_estimate * 2)) ]]; then
             eta_estimate="$eta_speed_adjusted"
         fi
     fi
     
-    # Sanity check: don't return unreasonably long ETAs
-    if [[ $eta_estimate -gt $((24 * 3600)) ]]; then  # More than 24 hours
-        eta_estimate=0
+    # Sanity check: cap at 24 hours and minimum at 5 seconds
+    if [[ $eta_estimate -gt $((24 * 3600)) ]]; then
+        eta_estimate=$((24 * 3600))  # Cap at 24 hours
+    elif [[ $eta_estimate -gt 0 ]] && [[ $eta_estimate -lt 5 ]]; then
+        eta_estimate=5  # Minimum 5 seconds for display stability
     fi
     
-    echo "${eta_estimate%.*}"  # Return integer seconds
+    echo "${eta_estimate%.*}"
 }
 
 # Format file size in human-readable format
