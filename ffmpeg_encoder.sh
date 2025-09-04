@@ -166,7 +166,7 @@ process_directory() {
 
 # Main function
 main() {
-    local input="" output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false" denoise="false"
+    local inputs=() output="" profile="" title="" crop="" scale="" mode="abr" web_search_enabled="true" use_complexity_analysis="false" denoise="false"
 
     # Check dependencies
     for tool in ffmpeg ffprobe bc uuidgen; do
@@ -182,7 +182,7 @@ main() {
                     show_help
                     exit 1
                 fi
-                input="$2"; shift 2 ;;
+                inputs+=("$2"); shift 2 ;;
             -o|--output)   
                 if [[ $# -lt 2 || -z "$2" ]]; then
                     log ERROR "Output file not specified for option $1"
@@ -257,36 +257,68 @@ main() {
         esac
     done
     
-    if [[ -z $input || -z $profile ]]; then
+    if [[ ${#inputs[@]} -eq 0 || -z $profile ]]; then
         log ERROR "Missing required arguments: -i INPUT -p PROFILE"
         show_help
         exit 1
     fi
     
-    # Check if input is a directory or file
-    if [[ -d "$input" ]]; then
-        # Directory processing - output parameter is ignored for batch processing
-        if [[ -n "$output" ]]; then
-            log WARN "Output parameter (-o) is ignored when processing directories. Files will be saved with UUID-based names."
-        fi
-        process_directory "$input" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
-    elif [[ -f "$input" ]]; then
-        # Single file processing
-        # Generate UUID-based output filename if not provided
-        if [[ -z $output ]]; then
-            local basename="$(basename "$input")"
-            local name="${basename%.*}"
-            local ext="${basename##*.}"
-            local uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-            local input_dir="$(dirname "$input")"
-            output="${input_dir}/${name}_${uuid}.${ext}"
-            log INFO "Generated output filename: $(basename "$output")"
-        fi
-        process_single_file "$input" "$output" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
-    else
-        log ERROR "Input path does not exist or is not a file/directory: $input"
-        exit 1
+    # Process multiple inputs
+    local total_inputs=${#inputs[@]}
+    log INFO "Processing $total_inputs input(s)..."
+    
+    # Warn about output parameter for multiple inputs
+    if [[ $total_inputs -gt 1 && -n "$output" ]]; then
+        log WARN "Output parameter (-o) is ignored when processing multiple inputs. Files will be saved with UUID-based names."
+        output=""  # Clear output to force UUID naming
     fi
+    
+    local current_input=0
+    for input in "${inputs[@]}"; do
+        ((current_input++)) || true
+        
+        log INFO "[$current_input/$total_inputs] Processing input: $input"
+        
+        # Validate input exists
+        if [[ ! -e "$input" ]]; then
+            log ERROR "Input path does not exist: $input"
+            continue
+        fi
+        
+        # Check if input is a directory or file
+        if [[ -d "$input" ]]; then
+            # Directory processing - output parameter is ignored for batch processing
+            log INFO "→ Processing directory: $input"
+            process_directory "$input" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
+        elif [[ -f "$input" ]]; then
+            # Single file processing
+            local file_output="$output"
+            
+            # Generate UUID-based output filename if not provided or multiple inputs
+            if [[ -z $file_output || $total_inputs -gt 1 ]]; then
+                local basename="$(basename "$input")"
+                local name="${basename%.*}"
+                local ext="${basename##*.}"
+                local uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+                local input_dir="$(dirname "$input")"
+                file_output="${input_dir}/${name}_${uuid}.${ext}"
+                log INFO "→ Generated output filename: $(basename "$file_output")"
+            else
+                log INFO "→ Output file: $(basename "$file_output")"
+            fi
+            
+            process_single_file "$input" "$file_output" "$profile" "$title" "$crop" "$scale" "$mode" "$web_search_enabled" "$use_complexity_analysis" "$denoise"
+        else
+            log ERROR "Input path is neither a file nor directory: $input"
+            continue
+        fi
+        
+        if [[ $current_input -lt $total_inputs ]]; then
+            log INFO "========================================"
+        fi
+    done
+    
+    log INFO "All inputs processed successfully!"
 }
 
 # Execute script
