@@ -72,32 +72,51 @@ The system includes 6 meticulously optimized profiles for different content type
 
 ### Mode Comparison
 
-| Mode | Passes | Quality Control | Use Case | File Size |
-|------|--------|----------------|----------|-----------|
-| **CRF** | 1 | Pure quality-based | Archival, Mastering | Variable |
-| **ABR** | 2 | Quality + size balance | Streaming, VOD | Predictable |
-| **CBR** | 2 | Constant bandwidth | Broadcast, Live | Constant |
+| Mode | Passes | Quality Control | File Size | Best For | Technical Notes |
+|------|--------|-----------------|-----------|-----------|-----------------| 
+| **CRF** | 1 | Pure quality-based | Variable | Archival, Mastering | Single-pass VBR, no bitrate constraints |
+| **ABR** | 2 | Quality + size balance | Predictable | Streaming, VOD | Fast first pass, quality second pass |
+| **CBR** | 2 | Constant bandwidth | Constant | Broadcast, Live | VBV buffer constraints for constant rate |
 
-### Technical Implementation
+### Technical Implementation Details
 
-**CRF Mode (Pure VBR)**:
+**CRF Mode (Pure Variable Bitrate)**:
 ```bash
-ffmpeg -i input.mkv -c:v libx265 -crf [adaptive_crf] -preset slow output.mkv
+# Single-pass encoding with quality-based rate control
+ffmpeg -i input.mkv -c:v libx265 \
+    -crf [adaptive_crf] -preset slow \
+    -x265-params "[profile_params]" \
+    output.mkv
+
+# Bitrate parameters completely removed for pure VBR
+# CRF adapts based on content type and complexity analysis
 ```
 
-**ABR Mode (Two-Pass Average)**:
+**ABR Mode (Two-Pass Average Bitrate)**:
 ```bash
-# Pass 1: Statistical analysis with medium preset
-ffmpeg -i input.mkv -b:v [bitrate] -pass 1 -preset medium -f null /dev/null
+# Pass 1: Fast statistical analysis
+ffmpeg -i input.mkv -c:v libx265 \
+    -b:v [adaptive_bitrate] -pass 1 \
+    -preset medium -x265-params "no-slow-firstpass=1" \
+    -f null /dev/null
+
 # Pass 2: Quality-optimized encoding
-ffmpeg -i input.mkv -b:v [bitrate] -pass 2 -preset slow output.mkv
+ffmpeg -i input.mkv -c:v libx265 \
+    -b:v [adaptive_bitrate] -pass 2 \
+    -preset slow -x265-params "[profile_params]" \
+    output.mkv
 ```
 
 **CBR Mode (Constant Bitrate)**:
 ```bash
-# Two-pass with VBV buffer constraints
-ffmpeg -i input.mkv -b:v [bitrate] -minrate [bitrate] -maxrate [bitrate] \
-       -bufsize [1.5x bitrate] -pass 1/2 output.mkv
+# Two-pass with VBV buffer rate control
+ffmpeg -i input.mkv -c:v libx265 \
+    -b:v [bitrate] -minrate [bitrate] -maxrate [bitrate] \
+    -bufsize [1.5x bitrate] -pass 1/2 \
+    -x265-params "[profile_params]" \
+    output.mkv
+
+# Buffer size = 1.5x target bitrate for stable rate control
 ```
 
 ## 🤖 Automatic Profile Selection

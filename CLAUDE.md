@@ -334,3 +334,28 @@ When working with this codebase, remember:
    - **Fallback design**: Technical analysis always available if web search fails
 
 This script suite represents **state-of-the-art automated video encoding** with professional-grade multi-mode support, comprehensive content analysis, and robust error handling suitable for both individual use and enterprise workflows.
+
+---
+
+# Integration Notes for Claude Code Users
+
+**System Complexity**: 2,372+ lines across 9 specialized modules  
+**Architecture**: Modular design with sophisticated inter-module communication  
+**Performance**: Production-ready with enterprise-grade error handling  
+**Maintenance**: Well-documented with comprehensive logging for debugging
+
+**Key Integration Points**:
+1. **Main orchestrator**: `ffmpeg_encoder.sh` (entry point for all operations)
+2. **Profile system**: `lib/config.sh` + `lib/profiles.sh` (encoding parameter management)
+3. **Analysis engine**: `lib/analysis.sh` + `lib/profile_selector.sh` (AI content classification)
+4. **Encoding core**: `lib/encoding.sh` + `lib/video_processing.sh` (multi-mode implementation)  
+5. **Progress system**: `lib/progress.sh` + `lib/utils.sh` (real-time monitoring and logging)
+
+**When modifying this codebase**:
+- Understand the modular dependencies and load order
+- Maintain the sophisticated error handling and fallback systems
+- Preserve the UUID-based collision prevention in batch processing
+- Test with the existing profile system before adding new profiles
+- Ensure compatibility across all three encoding modes (CRF/ABR/CBR)
+
+This represents **state-of-the-art video encoding automation** suitable for individual creators, streaming platforms, broadcast facilities, and enterprise media workflows.
